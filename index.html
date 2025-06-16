@@ -430,6 +430,163 @@
                 stroke-dashoffset: -10;
             }
         }
+
+        .shortcuts-help {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+            z-index: 1001;
+        }
+
+        .shortcuts-help.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .shortcuts-help h4 {
+            color: #00d4aa;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shortcuts-help .close-shortcuts {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .shortcuts-help .close-shortcuts:hover {
+            opacity: 1;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .shortcut-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .shortcut-desc {
+            color: #ccc;
+            margin-left: 10px;
+            flex: 1;
+        }
+
+        .violation-popup {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #ff4757;
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 400px;
+            z-index: 1002;
+            color: white;
+            font-size: 0.85em;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .violation-popup h4 {
+            color: #ff4757;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .violation-popup .close-popup {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .violation-popup .close-popup:hover {
+            opacity: 1;
+        }
+
+        .violation-details {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .violation-recommendation {
+            background: rgba(0, 212, 170, 0.1);
+            border-left: 3px solid #00d4aa;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .violation-recommendation strong {
+            color: #00d4aa;
+        }
+
+        .undo-redo-controls {
+            position: absolute;
+            top: 130px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+        }
+
+        .undo-redo-btn {
+            width: 40px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .undo-redo-btn:hover:not(:disabled) {
+            background: rgba(0, 212, 170, 0.8);
+            transform: scale(1.05);
+        }
+
+        .undo-redo-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -442,6 +599,24 @@
                 <div class="metric-item">
                     <span>Total People with Access:</span>
                     <span id="totalPeople" class="metric-value">0</span>
+                </div>
+                <div style="margin-left: 15px; font-size: 0.8em; color: #bdc3c7;">
+                    <div class="metric-item" style="margin-bottom: 4px;">
+                        <span>📋 Unclassified:</span>
+                        <span id="unclassifiedPeople" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item" style="margin-bottom: 4px;">
+                        <span>🏢 Internal:</span>
+                        <span id="internalPeople" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item" style="margin-bottom: 4px;">
+                        <span>🔐 Confidential:</span>
+                        <span id="confidentialPeople" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item" style="margin-bottom: 4px;">
+                        <span>🚫 Restricted:</span>
+                        <span id="restrictedPeople" class="metric-value">0</span>
+                    </div>
                 </div>
                 <div class="metric-item">
                     <span>Data Classification Violations:</span>
@@ -485,7 +660,7 @@
                 <div id="storeSuccessMessage" class="success-message"></div>
                 
                 <p style="font-size: 0.8em; color: #ccc; margin-bottom: 15px;">
-                    💡 Tip: Drag assets between stores. Ctrl+drag to separate asset into new store.
+                    💡 Tip: Drag assets between stores. Ctrl+drag to separate asset into new store. Right-click stores to edit.
                 </p>
             </div>
 
@@ -498,6 +673,7 @@
                     <button class="preset-btn" onclick="addPresetGroup('allstaff')">🏢 All Staff</button>
                     <button class="preset-btn" onclick="addPresetGroup('itteam')">💻 IT Team</button>
                     <button class="preset-btn" onclick="addPresetGroup('contractors')">🤝 Contractors</button>
+                    <button class="preset-btn" onclick="addPresetGroup('world')" style="background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);" title="5.7 billion people with access!">🌍 World</button>
                 </div>
 
                 <div id="accessGroups" class="access-groups">
@@ -537,6 +713,11 @@
                 <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom (0)">⌂</button>
             </div>
             
+            <div class="undo-redo-controls">
+                <button class="undo-redo-btn" id="undoBtn" onclick="undo()" title="Undo (Ctrl+Z)">↶</button>
+                <button class="undo-redo-btn" id="redoBtn" onclick="redo()" title="Redo (Ctrl+Y)">↷</button>
+            </div>
+            
             <div id="assetControls" class="asset-controls">
                 <button class="close-controls" onclick="closeAssetControls()">×</button>
                 <h4 id="assetControlsTitle">Asset Configuration</h4>
@@ -567,6 +748,35 @@
                 <button onclick="deleteSelectedAsset()" style="background: #ff4757; width: 100%;">🗑️ Delete Asset</button>
             </div>
             
+            <div id="storeControls" class="asset-controls">
+                <button class="close-controls" onclick="closeStoreControls()">×</button>
+                <h4 id="storeControlsTitle">Store Configuration</h4>
+                
+                <div class="form-group">
+                    <label>Store Name:</label>
+                    <input type="text" id="storeName" onchange="updateSelectedStore('label', this.value)">
+                </div>
+                
+                <div class="form-group">
+                    <label>Classification:</label>
+                    <select id="storeClassification" onchange="updateSelectedStore('classification', this.value)">
+                        <option value="unclassified">📋 Unclassified</option>
+                        <option value="internal">🏢 Internal</option>
+                        <option value="confidential">🔐 Confidential</option>
+                        <option value="restricted">🚫 Restricted</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Assets in Store:</label>
+                    <div id="storeAssetsList" style="max-height: 100px; overflow-y: auto; font-size: 0.8em; color: #ccc;">
+                        <!-- Asset list will be populated here -->
+                    </div>
+                </div>
+                
+                <button onclick="deleteSelectedStore()" style="background: #ff4757; width: 100%;">🗑️ Delete Store</button>
+            </div>
+            
             <div id="tooltip" class="tooltip"></div>
             <svg id="networkSvg"></svg>
             
@@ -590,7 +800,66 @@
                 <div style="margin-top: 10px; font-size: 0.8em;">
                     <div>⚠️ = PoLP Violation</div>
                     <div>🔥 = Critical Risk</div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        Press <kbd style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 2px;">H</kbd> for shortcuts
+                    </div>
                 </div>
+            </div>
+            
+            <div id="shortcutsHelp" class="shortcuts-help">
+                <h4>
+                    Keyboard Shortcuts
+                    <button class="close-shortcuts" onclick="hideShortcuts()">×</button>
+                </h4>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">H</span>
+                    <span class="shortcut-desc">Toggle this help</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">+</span>
+                    <span class="shortcut-desc">Zoom in</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">-</span>
+                    <span class="shortcut-desc">Zoom out</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">0</span>
+                    <span class="shortcut-desc">Reset zoom</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">R</span>
+                    <span class="shortcut-desc">Reset visualization</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">D</span>
+                    <span class="shortcut-desc">Load demo</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+Z</span>
+                    <span class="shortcut-desc">Undo</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+Y</span>
+                    <span class="shortcut-desc">Redo</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Esc</span>
+                    <span class="shortcut-desc">Close dialogs</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+Drag</span>
+                    <span class="shortcut-desc">Separate asset</span>
+                </div>
+            </div>
+            
+            <div id="violationPopup" class="violation-popup" style="display: none;">
+                <h4 id="violationTitle">
+                    Violation Details
+                    <button class="close-popup" onclick="closeViolationPopup()">×</button>
+                </h4>
+                <div id="violationContent" class="violation-details"></div>
+                <div id="violationRecommendation" class="violation-recommendation"></div>
             </div>
         </div>
     </div>
@@ -613,6 +882,13 @@
                 
                 // UI state
                 this.selectedAssetId = null;
+                this.selectedStoreId = null;
+                this.isCtrlPressed = false;
+                
+                // Undo/Redo system
+                this.history = [];
+                this.historyIndex = -1;
+                this.maxHistorySize = 50;
                 
                 // D3 setup
                 this.setupD3();
@@ -673,7 +949,8 @@
                     team: { people: 8, complexity: 2 },
                     department: { people: 25, complexity: 4 },
                     company: { people: 150, complexity: 8 },
-                    external: { people: 10, complexity: 6 }
+                    external: { people: 10, complexity: 6 },
+                    world: { people: 5700000000, complexity: 20 } // 5.7 billion people
                 };
                 
                 this.presetGroups = {
@@ -704,6 +981,13 @@
                         permission: 'read',
                         location: 'vpn',
                         duration: 'temporary'
+                    },
+                    world: {
+                        name: 'World (read)',
+                        access: 'world',
+                        permission: 'read',
+                        location: 'anywhere',
+                        duration: 'permanent'
                     }
                 };
                 
@@ -784,7 +1068,327 @@
                 return link;
             }
             
-            // Asset positioning
+            // Undo/Redo system
+            saveState(description = 'Action') {
+                // Create a deep copy of current state
+                const state = {
+                    description,
+                    timestamp: Date.now(),
+                    stores: this.serializeStores(),
+                    assets: this.serializeAssets(),
+                    groups: this.serializeGroups(),
+                    links: this.serializeLinks(),
+                    counters: {
+                        nextStoreId: this.nextStoreId,
+                        nextAssetId: this.nextAssetId,
+                        nextGroupId: this.nextGroupId,
+                        nextLinkId: this.nextLinkId
+                    }
+                };
+                
+                // Remove future history if we're not at the end
+                this.history = this.history.slice(0, this.historyIndex + 1);
+                
+                // Add new state
+                this.history.push(state);
+                this.historyIndex++;
+                
+                // Limit history size
+                if (this.history.length > this.maxHistorySize) {
+                    this.history.shift();
+                    this.historyIndex--;
+                }
+                
+                this.updateUndoRedoButtons();
+            }
+            
+            serializeStores() {
+                return Array.from(this.stores.values()).map(store => ({
+                    ...store,
+                    assetIds: Array.from(store.assetIds)
+                }));
+            }
+            
+            serializeAssets() {
+                return Array.from(this.assets.values()).map(asset => ({
+                    ...asset,
+                    accessGroups: Array.from(asset.accessGroups)
+                }));
+            }
+            
+            serializeGroups() {
+                return Array.from(this.groups.values());
+            }
+            
+            serializeLinks() {
+                return Array.from(this.links.values());
+            }
+            
+            restoreState(state) {
+                // Clear current data
+                this.stores.clear();
+                this.assets.clear();
+                this.groups.clear();
+                this.links.clear();
+                
+                // Restore stores
+                state.stores.forEach(store => {
+                    const restoredStore = { ...store, assetIds: new Set(store.assetIds) };
+                    this.stores.set(store.id, restoredStore);
+                });
+                
+                // Restore assets
+                state.assets.forEach(asset => {
+                    const restoredAsset = { ...asset, accessGroups: new Set(asset.accessGroups) };
+                    this.assets.set(asset.id, restoredAsset);
+                });
+                
+                // Restore groups
+                state.groups.forEach(group => {
+                    this.groups.set(group.id, group);
+                });
+                
+                // Restore links
+                state.links.forEach(link => {
+                    this.links.set(link.id, link);
+                });
+                
+                // Restore counters
+                if (state.counters) {
+                    this.nextStoreId = state.counters.nextStoreId;
+                    this.nextAssetId = state.counters.nextAssetId;
+                    this.nextGroupId = state.counters.nextGroupId;
+                    this.nextLinkId = state.counters.nextLinkId;
+                }
+                
+                this.closeAllControls();
+                this.renderAccessGroups();
+                this.updateVisualization();
+                this.updateUndoRedoButtons();
+            }
+            
+            undo() {
+                if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                    this.restoreState(this.history[this.historyIndex]);
+                    this.showMessage(`Undo: ${this.history[this.historyIndex + 1]?.description || 'Action'}`, 'success');
+                }
+            }
+            
+            redo() {
+                if (this.historyIndex < this.history.length - 1) {
+                    this.historyIndex++;
+                    this.restoreState(this.history[this.historyIndex]);
+                    this.showMessage(`Redo: ${this.history[this.historyIndex]?.description || 'Action'}`, 'success');
+                }
+            }
+            
+            updateUndoRedoButtons() {
+                const undoBtn = document.getElementById('undoBtn');
+                const redoBtn = document.getElementById('redoBtn');
+                
+                if (undoBtn) {
+                    undoBtn.disabled = this.historyIndex <= 0;
+                    undoBtn.title = this.historyIndex > 0 ? 
+                        `Undo: ${this.history[this.historyIndex]?.description || 'Action'} (Ctrl+Z)` : 
+                        'Nothing to undo (Ctrl+Z)';
+                }
+                
+                if (redoBtn) {
+                    redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+                    redoBtn.title = this.historyIndex < this.history.length - 1 ? 
+                        `Redo: ${this.history[this.historyIndex + 1]?.description || 'Action'} (Ctrl+Y)` : 
+                        'Nothing to redo (Ctrl+Y)';
+                }
+            }
+            
+            // Keyboard shortcuts
+            handleKeyboardShortcut(event) {
+                // Don't trigger shortcuts when typing in inputs
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT' || event.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+                
+                const key = event.key.toLowerCase();
+                const ctrlOrCmd = event.ctrlKey || event.metaKey;
+                
+                switch (key) {
+                    case 'h':
+                        event.preventDefault();
+                        this.toggleShortcutsHelp();
+                        break;
+                    case '+':
+                    case '=':
+                        event.preventDefault();
+                        this.zoomIn();
+                        break;
+                    case '-':
+                        event.preventDefault();
+                        this.zoomOut();
+                        break;
+                    case '0':
+                        event.preventDefault();
+                        this.resetZoom();
+                        break;
+                    case 'r':
+                        if (!ctrlOrCmd) {
+                            event.preventDefault();
+                            this.resetVisualization();
+                        }
+                        break;
+                    case 'd':
+                        if (!ctrlOrCmd) {
+                            event.preventDefault();
+                            this.loadDemo();
+                        }
+                        break;
+                    case 'z':
+                        if (ctrlOrCmd) {
+                            event.preventDefault();
+                            if (event.shiftKey) {
+                                this.redo();
+                            } else {
+                                this.undo();
+                            }
+                        }
+                        break;
+                    case 'y':
+                        if (ctrlOrCmd) {
+                            event.preventDefault();
+                            this.redo();
+                        }
+                        break;
+                    case 'escape':
+                        this.closeAllControls();
+                        this.closeViolationPopup();
+                        this.hideShortcutsHelp();
+                        break;
+                }
+            }
+            
+            toggleShortcutsHelp() {
+                const help = document.getElementById('shortcutsHelp');
+                if (help.classList.contains('show')) {
+                    this.hideShortcutsHelp();
+                } else {
+                    this.showShortcutsHelp();
+                }
+            }
+            
+            showShortcutsHelp() {
+                const help = document.getElementById('shortcutsHelp');
+                help.classList.add('show');
+                
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    this.hideShortcutsHelp();
+                }, 10000);
+            }
+            
+            hideShortcutsHelp() {
+                const help = document.getElementById('shortcutsHelp');
+                help.classList.remove('show');
+            }
+            
+            // Violation popup system
+            showViolationPopup(violation, event) {
+                const popup = document.getElementById('violationPopup');
+                const title = document.getElementById('violationTitle');
+                const content = document.getElementById('violationContent');
+                const recommendation = document.getElementById('violationRecommendation');
+                
+                // Set content
+                title.innerHTML = `${violation.severity === 'CRITICAL' ? '🔥' : '⚠️'} ${violation.type.toUpperCase()} VIOLATION <button class="close-popup" onclick="closeViolationPopup()">×</button>`;
+                content.innerHTML = violation.description;
+                recommendation.innerHTML = `<strong>💡 Recommendation:</strong><br>${violation.recommendation}`;
+                
+                // Position popup
+                const rect = event.target.getBoundingClientRect();
+                const popupWidth = 400;
+                const popupHeight = 200;
+                
+                let left = Math.min(event.pageX + 10, window.innerWidth - popupWidth - 20);
+                let top = Math.min(event.pageY + 10, window.innerHeight - popupHeight - 20);
+                
+                left = Math.max(20, left);
+                top = Math.max(20, top);
+                
+                popup.style.left = left + 'px';
+                popup.style.top = top + 'px';
+                popup.style.display = 'block';
+                
+                // Auto-close after 15 seconds
+                setTimeout(() => {
+                    this.closeViolationPopup();
+                }, 15000);
+            }
+            
+            closeViolationPopup() {
+                const popup = document.getElementById('violationPopup');
+                popup.style.display = 'none';
+            }
+            validateDataIntegrity() {
+                const issues = [];
+                
+                // Check asset-store consistency
+                this.assets.forEach(asset => {
+                    const store = this.stores.get(asset.storeId);
+                    if (!store) {
+                        issues.push(`Asset ${asset.id} references non-existent store ${asset.storeId}`);
+                    } else if (!store.assetIds.has(asset.id)) {
+                        issues.push(`Store ${store.id} doesn't contain asset ${asset.id} but asset references it`);
+                        // Auto-fix: add asset to store
+                        store.assetIds.add(asset.id);
+                    }
+                });
+                
+                // Check store-asset consistency
+                this.stores.forEach(store => {
+                    store.assetIds.forEach(assetId => {
+                        const asset = this.assets.get(assetId);
+                        if (!asset) {
+                            issues.push(`Store ${store.id} references non-existent asset ${assetId}`);
+                            // Auto-fix: remove asset from store
+                            store.assetIds.delete(assetId);
+                        } else if (asset.storeId !== store.id) {
+                            issues.push(`Asset ${assetId} has wrong storeId (${asset.storeId} vs ${store.id})`);
+                            // Auto-fix: update asset's storeId
+                            asset.storeId = store.id;
+                        }
+                    });
+                });
+                
+                // Check orphaned links
+                this.links.forEach((link, linkId) => {
+                    const sourceExists = this.assets.has(link.sourceId);
+                    const targetExists = this.assets.has(link.targetId);
+                    
+                    if (!sourceExists || !targetExists) {
+                        issues.push(`Link ${linkId} has orphaned references`);
+                        // Auto-fix: remove orphaned link
+                        this.links.delete(linkId);
+                    }
+                });
+                
+                // Check group references in assets
+                this.assets.forEach(asset => {
+                    const groupsToRemove = [];
+                    asset.accessGroups.forEach(groupId => {
+                        if (!this.groups.has(groupId)) {
+                            issues.push(`Asset ${asset.id} references non-existent group ${groupId}`);
+                            groupsToRemove.push(groupId);
+                        }
+                    });
+                    // Auto-fix: remove non-existent groups
+                    groupsToRemove.forEach(groupId => asset.accessGroups.delete(groupId));
+                });
+                
+                if (issues.length > 0) {
+                    console.warn('Data integrity issues found and auto-fixed:', issues);
+                }
+                
+                return issues;
+            }
             positionAssetsInStore(store) {
                 const assetIds = Array.from(store.assetIds);
                 const assets = assetIds.map(id => this.assets.get(id)).filter(Boolean);
@@ -842,6 +1446,8 @@
                     return;
                 }
                 
+                this.saveState(`Create ${template.label.toLowerCase()}`);
+                
                 // Create new store for copies
                 const newStore = this.createStore(`${template.label} Store`, template.classification);
                 
@@ -886,6 +1492,8 @@
                     return;
                 }
                 
+                this.saveState('Add data store');
+                
                 // Create store with initial asset
                 const store = this.createStore(name, classification);
                 this.createAsset('Data Asset', classification, store.id);
@@ -899,6 +1507,8 @@
             
             // Group management
             addNewGroup() {
+                this.saveState('Add access group');
+                
                 const group = this.createGroup(
                     `Access Group ${this.nextGroupId - 1}`,
                     'individual',
@@ -911,6 +1521,8 @@
             }
             
             addPresetGroup(presetType) {
+                this.saveState('Add preset group');
+                
                 const preset = this.presetGroups[presetType];
                 if (!preset) return;
                 
@@ -926,6 +1538,8 @@
             }
             
             deleteGroup(groupId) {
+                this.saveState('Delete access group');
+                
                 this.groups.delete(groupId);
                 
                 // Remove group from all assets
@@ -993,6 +1607,7 @@
                                 <option value="department" ${group.access === 'department' ? 'selected' : ''}>Department</option>
                                 <option value="company" ${group.access === 'company' ? 'selected' : ''}>Company</option>
                                 <option value="external" ${group.access === 'external' ? 'selected' : ''}>External</option>
+                                <option value="world" ${group.access === 'world' ? 'selected' : ''}>World (5.7B)</option>
                             </select>
                             <select onchange="visualizer.updateGroupProperty('${group.id}', 'permission', this.value)">
                                 <option value="read" ${group.permission === 'read' ? 'selected' : ''}>Read</option>
@@ -1015,7 +1630,99 @@
                 });
             }
             
-            // Asset controls
+            // Store controls
+            showStoreControls(storeId, event) {
+                this.selectedStoreId = storeId;
+                const store = this.stores.get(storeId);
+                if (!store) return;
+                
+                const controls = document.getElementById('storeControls');
+                document.getElementById('storeControlsTitle').textContent = `${store.label} Configuration`;
+                document.getElementById('storeName').value = store.label;
+                document.getElementById('storeClassification').value = store.classification;
+                
+                // Populate asset list
+                const assetsList = document.getElementById('storeAssetsList');
+                assetsList.innerHTML = '';
+                
+                if (store.assetIds.size === 0) {
+                    assetsList.innerHTML = '<em>No assets in this store</em>';
+                } else {
+                    Array.from(store.assetIds).forEach(assetId => {
+                        const asset = this.assets.get(assetId);
+                        if (asset) {
+                            const assetDiv = document.createElement('div');
+                            assetDiv.innerHTML = `• ${asset.label} (${asset.classification})`;
+                            assetsList.appendChild(assetDiv);
+                        }
+                    });
+                }
+                
+                // Position controls
+                const rect = event.target.getBoundingClientRect();
+                const left = Math.min(event.pageX + 10, window.innerWidth - 300);
+                const top = Math.min(event.pageY + 10, window.innerHeight - 400);
+                
+                controls.style.left = Math.max(20, left) + 'px';
+                controls.style.top = Math.max(20, top) + 'px';
+                controls.style.display = 'block';
+            }
+            
+            closeStoreControls() {
+                document.getElementById('storeControls').style.display = 'none';
+                this.selectedStoreId = null;
+            }
+            
+            updateSelectedStore(property, value) {
+                if (!this.selectedStoreId) return;
+                
+                const store = this.stores.get(this.selectedStoreId);
+                if (!store) return;
+                
+                if (property === 'label') {
+                    if (!value || value.trim().length === 0) {
+                        this.showMessage('Store name cannot be empty', 'error');
+                        return;
+                    }
+                    
+                    const trimmedValue = value.trim();
+                    const existingStore = Array.from(this.stores.values()).find(s => 
+                        s.id !== this.selectedStoreId && s.label.toLowerCase() === trimmedValue.toLowerCase()
+                    );
+                    
+                    if (existingStore) {
+                        this.showMessage('A store with this name already exists', 'error');
+                        return;
+                    }
+                    
+                    store[property] = trimmedValue;
+                } else {
+                    store[property] = value;
+                }
+                
+                this.updateVisualization();
+            }
+            
+            deleteSelectedStore() {
+                if (!this.selectedStoreId) return;
+                
+                const store = this.stores.get(this.selectedStoreId);
+                if (!store) return;
+                
+                if (store.assetIds.size > 0) {
+                    this.showMessage('Cannot delete store that contains assets. Move or delete assets first.', 'error');
+                    return;
+                }
+                
+                this.saveState('Delete store');
+                
+                // Remove store
+                this.stores.delete(this.selectedStoreId);
+                
+                this.closeStoreControls();
+                this.updateVisualization();
+                this.showMessage('Store deleted successfully', 'success');
+            }
             showAssetControls(assetId, event) {
                 this.selectedAssetId = assetId;
                 const asset = this.assets.get(assetId);
@@ -1055,6 +1762,11 @@
             closeAssetControls() {
                 document.getElementById('assetControls').style.display = 'none';
                 this.selectedAssetId = null;
+            }
+            
+            closeAllControls() {
+                this.closeAssetControls();
+                this.closeStoreControls();
             }
             
             updateSelectedAsset(property, value) {
@@ -1097,6 +1809,8 @@
                     return;
                 }
                 
+                this.saveState('Separate asset');
+                
                 // Remove from current store
                 currentStore.assetIds.delete(this.selectedAssetId);
                 this.positionAssetsInStore(currentStore);
@@ -1118,6 +1832,8 @@
                 
                 const asset = this.assets.get(this.selectedAssetId);
                 if (!asset) return;
+                
+                this.saveState('Delete asset');
                 
                 const store = this.stores.get(asset.storeId);
                 
@@ -1157,7 +1873,42 @@
                 let mixedStores = 0;
                 let totalComplexity = 0;
                 
-                // Calculate people with access
+                // Track people with access by classification level
+                const peopleByClassification = {
+                    unclassified: new Set(),
+                    internal: new Set(),
+                    confidential: new Set(),
+                    restricted: new Set()
+                };
+                
+                // Calculate people with access per classification
+                this.assets.forEach(asset => {
+                    asset.accessGroups.forEach(groupId => {
+                        const group = this.groups.get(groupId);
+                        if (group) {
+                            // Add to the appropriate classification bucket
+                            if (!peopleByClassification[asset.classification].has(groupId)) {
+                                peopleByClassification[asset.classification].add(groupId);
+                            }
+                        }
+                    });
+                });
+                
+                // Calculate totals for each classification
+                const classificationTotals = {};
+                Object.keys(peopleByClassification).forEach(classification => {
+                    let classificationTotal = 0;
+                    peopleByClassification[classification].forEach(groupId => {
+                        const group = this.groups.get(groupId);
+                        if (group) {
+                            classificationTotal += this.accessLevels[group.access].people;
+                        }
+                    });
+                    classificationTotals[classification] = classificationTotal;
+                    totalPeople += classificationTotal;
+                });
+                
+                // Calculate complexity
                 const uniqueGroups = new Set();
                 this.assets.forEach(asset => {
                     asset.accessGroups.forEach(groupId => {
@@ -1165,7 +1916,6 @@
                             uniqueGroups.add(groupId);
                             const group = this.groups.get(groupId);
                             if (group) {
-                                totalPeople += this.accessLevels[group.access].people;
                                 totalComplexity += this.accessLevels[group.access].complexity;
                             }
                         }
@@ -1196,6 +1946,9 @@
                                     (asset.classification === 'confidential' || asset.classification === 'restricted')) {
                                     classificationViolations++;
                                 }
+                                if (group.access === 'world' && asset.classification !== 'unclassified') {
+                                    classificationViolations += 10; // World access violations count heavily
+                                }
                                 if (group.access === 'company' && asset.classification === 'restricted') {
                                     classificationViolations++;
                                 }
@@ -1213,14 +1966,40 @@
                     classificationViolations,
                     mixedStores,
                     dataCopies: this.assets.size,
-                    complexity
+                    complexity,
+                    classificationTotals
                 };
+            }
+            
+            // Helper function to format large numbers
+            formatNumber(num) {
+                if (num >= 1000000000) {
+                    return (num / 1000000000).toFixed(1) + 'B';
+                } else if (num >= 1000000) {
+                    return (num / 1000000).toFixed(1) + 'M';
+                } else if (num >= 1000) {
+                    return (num / 1000).toFixed(1) + 'K';
+                } else {
+                    return num.toString();
+                }
             }
             
             updateMetrics() {
                 const metrics = this.calculateMetrics();
                 
-                document.getElementById('totalPeople').textContent = metrics.totalPeople;
+                // Update total people count
+                document.getElementById('totalPeople').textContent = this.formatNumber(metrics.totalPeople);
+                
+                // Update classification breakdowns
+                document.getElementById('unclassifiedPeople').textContent = this.formatNumber(metrics.classificationTotals.unclassified);
+                document.getElementById('internalPeople').textContent = this.formatNumber(metrics.classificationTotals.internal);
+                document.getElementById('confidentialPeople').textContent = this.formatNumber(metrics.classificationTotals.confidential);
+                document.getElementById('restrictedPeople').textContent = this.formatNumber(metrics.classificationTotals.restricted);
+                
+                // Apply color coding based on sensitivity and numbers
+                this.updateClassificationColors(metrics.classificationTotals);
+                
+                // Update other metrics
                 document.getElementById('classificationViolations').textContent = metrics.classificationViolations;
                 document.getElementById('mixedStores').textContent = metrics.mixedStores;
                 document.getElementById('dataCopies').textContent = metrics.dataCopies;
@@ -1237,12 +2016,56 @@
                 if (metrics.complexity === 'CRITICAL') {
                     warningMessage += '<div class="critical-warning">🚨 Management complexity is critical!</div>';
                 }
+                if (metrics.totalPeople > 1000000000) { // Over 1 billion people
+                    warningMessage += '<div class="critical-warning">🌍 GLOBAL EXPOSURE: Over 1 billion people have data access!</div>';
+                }
                 
                 document.getElementById('warningMessage').innerHTML = warningMessage;
             }
             
+            updateClassificationColors(totals) {
+                // Color code based on risk level for each classification
+                const elements = {
+                    unclassified: document.getElementById('unclassifiedPeople'),
+                    internal: document.getElementById('internalPeople'),
+                    confidential: document.getElementById('confidentialPeople'),
+                    restricted: document.getElementById('restrictedPeople')
+                };
+                
+                // Reset colors first
+                Object.values(elements).forEach(el => {
+                    if (el) el.style.color = '#fff';
+                });
+                
+                // Apply risk-based coloring
+                if (totals.restricted > 100) {
+                    elements.restricted.style.color = '#ff4757'; // Red for high restricted access
+                } else if (totals.restricted > 10) {
+                    elements.restricted.style.color = '#ffa502'; // Orange for moderate restricted access
+                }
+                
+                if (totals.confidential > 1000) {
+                    elements.confidential.style.color = '#ff4757'; // Red for high confidential access
+                } else if (totals.confidential > 100) {
+                    elements.confidential.style.color = '#ffa502'; // Orange for moderate confidential access
+                }
+                
+                if (totals.internal > 10000) {
+                    elements.internal.style.color = '#ffa502'; // Orange for very high internal access
+                }
+                
+                if (totals.unclassified > 1000000000) { // Over 1 billion
+                    elements.unclassified.style.color = '#ff4757'; // Red for global exposure
+                } else if (totals.unclassified > 100000000) { // Over 100 million
+                    elements.unclassified.style.color = '#ffa502'; // Orange for massive exposure
+                }
+            }
+            
             // Visualization
             updateVisualization() {
+                // Validate data integrity before updating
+                this.validateDataIntegrity();
+                
                 this.updateMetrics();
                 this.drawVisualization();
             }
@@ -1287,6 +2110,10 @@
                     .attr('rx', 8)
                     .style('filter', 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))')
                     .style('cursor', 'move')
+                    .on('contextmenu', (event, d) => {
+                        event.preventDefault();
+                        this.showStoreControls(d.id, event);
+                    })
                     .call(this.createDragBehavior('store'));
                 
                 // Store labels
@@ -1402,28 +2229,111 @@
             }
             
             addViolationIndicators() {
-                const violations = [];
+                // Remove existing violation indicators first
+                this.g.selectAll('.violation-indicator').remove();
                 
-                this.assets.forEach(asset => {
-                    const store = this.stores.get(asset.storeId);
-                    if (store && this.classificationLevels[asset.classification] > this.classificationLevels[store.classification]) {
-                        violations.push({
-                            x: asset.x + 25,
-                            y: asset.y - 20,
-                            type: 'classification'
-                        });
-                    }
-                });
+                const violations = this.calculateViolationDetails();
                 
+                // Create new violation indicators with proper positioning
                 this.g.selectAll('.violation-indicator')
-                    .data(violations)
+                    .data(violations, d => d.id)
                     .enter().append('text')
                     .attr('class', 'violation-indicator')
                     .attr('x', d => d.x)
                     .attr('y', d => d.y)
                     .style('font-size', '16px')
                     .style('cursor', 'pointer')
-                    .text('⚠️');
+                    .style('pointer-events', 'all')
+                    .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
+                    .text(d => d.severity === 'CRITICAL' ? '🔥' : '⚠️')
+                    .on('click', (event, d) => {
+                        event.stopPropagation();
+                        this.showViolationPopup(d, event);
+                    });
+            }
+            
+            calculateViolationDetails() {
+                const violations = [];
+                
+                this.assets.forEach(asset => {
+                    const store = this.stores.get(asset.storeId);
+                    if (!store) return;
+                    
+                    // Classification violations - position relative to current asset position
+                    if (this.classificationLevels[asset.classification] > this.classificationLevels[store.classification]) {
+                        violations.push({
+                            id: `classification_${asset.id}`,
+                            type: 'classification',
+                            severity: 'CRITICAL',
+                            x: asset.x + 25, // Always relative to current asset position
+                            y: asset.y - 20,
+                            description: `Classification Mismatch: "${asset.label}" (${asset.classification.toUpperCase()}) is stored in "${store.label}" (${store.classification.toUpperCase()}). This violates data classification policies.`,
+                            recommendation: `Move "${asset.label}" to a ${asset.classification.toUpperCase()} classified store, or downgrade the asset classification if appropriate.`
+                        });
+                    }
+                    
+                    // Access violations - position relative to current asset position
+                    asset.accessGroups.forEach(groupId => {
+                        const group = this.groups.get(groupId);
+                        if (!group) return;
+                        
+                        let violationFound = false;
+                        let violationDescription = '';
+                        let recommendation = '';
+                        
+                        if (group.access === 'external' && (asset.classification === 'confidential' || asset.classification === 'restricted')) {
+                            violationFound = true;
+                            violationDescription = `External Access Violation: "${group.name}" (external users) has access to "${asset.label}" (${asset.classification.toUpperCase()}). External users should not access confidential or restricted data.`;
+                            recommendation = `Remove external access to this ${asset.classification} asset, or consider downgrading classification if external access is necessary.`;
+                        } else if (group.access === 'world' && asset.classification !== 'unclassified') {
+                            violationFound = true;
+                            violationDescription = `🚨 MASSIVE EXPOSURE: "${group.name}" (5.7 billion people globally) has access to "${asset.label}" (${asset.classification.toUpperCase()}). This represents a catastrophic data breach scenario.`;
+                            recommendation = `IMMEDIATE ACTION REQUIRED: Remove world access from this ${asset.classification} asset. Only unclassified public data should have world-wide access.`;
+                        } else if (group.access === 'company' && asset.classification === 'restricted') {
+                            violationFound = true;
+                            violationDescription = `Over-privileged Access: "${group.name}" (company-wide) has access to "${asset.label}" (RESTRICTED). Restricted data should follow need-to-know principles.`;
+                            recommendation = `Restrict access to specific departments or teams that require this data for their job functions.`;
+                        } else if (group.location === 'anywhere' && asset.classification === 'restricted') {
+                            violationFound = true;
+                            violationDescription = `Location Risk: "${group.name}" can access "${asset.label}" (RESTRICTED) from anywhere. Restricted data should have location controls.`;
+                            recommendation = `Limit access to office or VPN-only locations for restricted data.`;
+                        }
+                        
+                        if (violationFound) {
+                            violations.push({
+                                id: `access_${asset.id}_${groupId}`,
+                                type: 'access',
+                                severity: group.access === 'world' ? 'CRITICAL' : 'HIGH',
+                                x: asset.x - 25, // Always relative to current asset position
+                                y: asset.y - 20,
+                                description: violationDescription,
+                                recommendation: recommendation
+                            });
+                        }
+                    });
+                });
+                
+                // Mixed classification store violations - position relative to current store position
+                this.stores.forEach(store => {
+                    const storeAssets = Array.from(store.assetIds).map(id => this.assets.get(id)).filter(Boolean);
+                    const classifications = [...new Set(storeAssets.map(a => a.classification))];
+                    
+                    if (classifications.length > 1) {
+                        const assetList = storeAssets.map(a => `"${a.label}" (${a.classification.toUpperCase()})`).join(', ');
+                        const storeSize = this.getStoreSize(store);
+                        violations.push({
+                            id: `mixed_${store.id}`,
+                            type: 'mixed-store',
+                            severity: 'CRITICAL',
+                            x: store.x + (storeSize.width / 2) - 15, // Position relative to current store position
+                            y: store.y - (storeSize.height / 2) - 5,
+                            description: `Mixed Classification Storage: "${store.label}" contains assets with different classification levels: ${assetList}. This creates data spillage risks.`,
+                            recommendation: `Separate assets into stores matching their classification levels. Create dedicated stores for each classification level to maintain proper data compartmentalization.`
+                        });
+                    }
+                });
+                
+                return violations;
             }
             
             createDragBehavior(type) {
@@ -1437,6 +2347,12 @@
                 d.isDragging = true;
                 d.dragOffsetX = event.x - d.x;
                 d.dragOffsetY = event.y - d.y;
+                
+                // Check for Ctrl key for asset separation
+                if (d.storeId && this.isCtrlPressed) {
+                    d.separateOnDrag = true;
+                    this.showMessage('Ctrl+Drag: Will separate asset to new store', 'success');
+                }
             }
             
             draggedStore(event, d) {
@@ -1489,39 +2405,70 @@
                 this.g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
                 
                 if (d.storeId) { // This is an asset
-                    const targetStore = Array.from(this.stores.values()).find(store => {
-                        if (store.id === d.storeId) return false;
-                        const { width, height } = this.getStoreSize(store);
-                        const dx = Math.abs(store.x - d.x);
-                        const dy = Math.abs(store.y - d.y);
-                        return dx < width / 2 && dy < height / 2;
-                    });
-                    
-                    if (targetStore) {
-                        // Move asset to new store
-                        const oldStore = this.stores.get(d.storeId);
-                        if (oldStore) {
-                            oldStore.assetIds.delete(d.id);
-                            if (oldStore.assetIds.size === 0) {
-                                this.stores.delete(oldStore.id);
-                            } else {
-                                this.positionAssetsInStore(oldStore);
+                    if (d.separateOnDrag) {
+                        // Ctrl+Drag: Separate asset to new store
+                        const currentStore = this.stores.get(d.storeId);
+                        if (currentStore && currentStore.assetIds.size > 1) {
+                            // Remove from current store
+                            currentStore.assetIds.delete(d.id);
+                            this.positionAssetsInStore(currentStore);
+                            
+                            // Create new store at drag location
+                            const newStore = this.createStore(`${d.label} Store`, d.classification, d.x, d.y);
+                            
+                            // Move asset to new store
+                            d.storeId = newStore.id;
+                            newStore.assetIds.add(d.id);
+                            this.positionAssetsInStore(newStore);
+                            
+                            this.updateVisualization();
+                            this.showMessage(`Separated "${d.label}" to new store`, 'success');
+                        } else {
+                            this.showMessage('Cannot separate the only asset from a store', 'error');
+                            // Snap back to original position
+                            const originalStore = this.stores.get(d.storeId);
+                            if (originalStore) {
+                                this.positionAssetsInStore(originalStore);
+                                this.updatePositions();
                             }
                         }
-                        
-                        targetStore.assetIds.add(d.id);
-                        d.storeId = targetStore.id;
-                        this.positionAssetsInStore(targetStore);
-                        
-                        this.updateVisualization();
-                        this.showMessage(`Moved "${d.label}" to "${targetStore.label}"`, 'success');
+                        delete d.separateOnDrag;
                     } else {
-                        // Snap back to original store
-                        const originalStore = this.stores.get(d.storeId);
-                        if (originalStore) {
-                            this.positionAssetsInStore(originalStore);
+                        // Normal drag: Try to move to another store
+                        const targetStore = Array.from(this.stores.values()).find(store => {
+                            if (store.id === d.storeId) return false;
+                            const { width, height } = this.getStoreSize(store);
+                            const dx = Math.abs(store.x - d.x);
+                            const dy = Math.abs(store.y - d.y);
+                            return dx < width / 2 && dy < height / 2;
+                        });
+                        
+                        if (targetStore) {
+                            // Move asset to new store
+                            const oldStore = this.stores.get(d.storeId);
+                            if (oldStore) {
+                                oldStore.assetIds.delete(d.id);
+                                if (oldStore.assetIds.size === 0) {
+                                    this.stores.delete(oldStore.id);
+                                } else {
+                                    this.positionAssetsInStore(oldStore);
+                                }
+                            }
+                            
+                            targetStore.assetIds.add(d.id);
+                            d.storeId = targetStore.id;
+                            this.positionAssetsInStore(targetStore);
+                            
+                            this.updateVisualization();
+                            this.showMessage(`Moved "${d.label}" to "${targetStore.label}"`, 'success');
+                        } else {
+                            // Snap back to original store
+                            const originalStore = this.stores.get(d.storeId);
+                            if (originalStore) {
+                                this.positionAssetsInStore(originalStore);
+                            }
+                            this.updatePositions();
                         }
-                        this.updatePositions();
                     }
                 } else {
                     // Store was dragged
@@ -1607,10 +2554,26 @@
                         const target = this.assets.get(d.targetId);
                         return target ? target.y : 0;
                     });
+                
+                // Update violation indicators - CRITICAL FIX
+                this.updateViolationIndicatorPositions();
+            }
+            
+            updateViolationIndicatorPositions() {
+                // Recalculate violation positions based on current asset/store positions
+                const violations = this.calculateViolationDetails();
+                
+                // Update existing violation indicators with new positions
+                this.g.selectAll('.violation-indicator')
+                    .data(violations, d => d.id)
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
             }
             
             // Demo scenario
             loadDemo() {
+                this.saveState('Load demo scenario');
+                
                 // Clear existing data
                 this.stores.clear();
                 this.assets.clear();
@@ -1681,6 +2644,8 @@
             }
             
             resetVisualization() {
+                this.saveState('Reset visualization');
+                
                 this.stores.clear();
                 this.assets.clear();
                 this.groups.clear();
@@ -1690,7 +2655,7 @@
                 this.nextGroupId = 1;
                 this.nextLinkId = 1;
                 
-                this.closeAssetControls();
+                this.closeAllControls();
                 this.initialize();
                 this.showMessage('Visualization reset to initial state', 'success');
             }
@@ -1798,6 +2763,9 @@
                 const initialStore = this.createStore('Primary Data Store', 'confidential', this.width / 2, this.height / 2);
                 this.createAsset('Sensitive Customer Data', 'confidential', initialStore.id);
                 
+                // Save initial state
+                this.saveState('Initial state');
+                
                 this.updateVisualization();
             }
         }
@@ -1818,10 +2786,17 @@
         function deleteSelectedAsset() { visualizer.deleteSelectedAsset(); }
         function updateSelectedAsset(property, value) { visualizer.updateSelectedAsset(property, value); }
         function closeAssetControls() { visualizer.closeAssetControls(); }
+        function closeStoreControls() { visualizer.closeStoreControls(); }
+        function updateSelectedStore(property, value) { visualizer.updateSelectedStore(property, value); }
+        function deleteSelectedStore() { visualizer.deleteSelectedStore(); }
         function toggleAssetAccess(assetId, groupId, isChecked) { visualizer.toggleAssetAccess(assetId, groupId, isChecked); }
         function zoomIn() { visualizer.zoomIn(); }
         function zoomOut() { visualizer.zoomOut(); }
         function resetZoom() { visualizer.resetZoom(); }
+        function undo() { visualizer.undo(); }
+        function redo() { visualizer.redo(); }
+        function hideShortcuts() { visualizer.hideShortcutsHelp(); }
+        function closeViolationPopup() { visualizer.closeViolationPopup(); }
         
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
@@ -1830,7 +2805,30 @@
             // Global click handler
             document.addEventListener('click', (event) => {
                 if (!event.target.closest('.asset-controls') && !event.target.closest('.asset')) {
-                    visualizer.closeAssetControls();
+                    visualizer.closeAllControls();
+                }
+            });
+            
+            // Keyboard event handlers for Ctrl key detection
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey || event.metaKey) {
+                    visualizer.isCtrlPressed = true;
+                }
+                
+                // Handle keyboard shortcuts
+                visualizer.handleKeyboardShortcut(event);
+            });
+            
+            document.addEventListener('keyup', (event) => {
+                if (!event.ctrlKey && !event.metaKey) {
+                    visualizer.isCtrlPressed = false;
+                }
+            });
+            
+            // Prevent context menu on stores for right-click functionality
+            document.addEventListener('contextmenu', (event) => {
+                if (event.target.closest('.store')) {
+                    event.preventDefault();
                 }
             });
             
@@ -1839,8 +2837,18 @@
                 visualizer.width = window.innerWidth - 380;
                 visualizer.height = window.innerHeight;
                 visualizer.svg.attr('width', visualizer.width).attr('height', visualizer.height);
-                visualizer.closeAssetControls();
+                visualizer.closeAllControls();
             });
+            
+            // Focus loss detection for Ctrl key
+            window.addEventListener('blur', () => {
+                visualizer.isCtrlPressed = false;
+            });
+            
+            // Show initial help message
+            setTimeout(() => {
+                visualizer.showMessage('Press H for keyboard shortcuts, right-click stores to edit', 'success');
+            }, 2000);
         });
     </script>
 </body>
