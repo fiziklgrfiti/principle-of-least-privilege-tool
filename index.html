@@ -21,7 +21,7 @@
 
         .container {
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 380px 1fr;
             height: 100vh;
         }
 
@@ -70,7 +70,7 @@
         h1 {
             color: #00d4aa;
             margin-bottom: 20px;
-            font-size: 1.5em;
+            font-size: 1.4em;
             text-align: center;
         }
 
@@ -79,34 +79,66 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             padding: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             backdrop-filter: blur(10px);
         }
 
         .section h3 {
             color: #00d4aa;
-            margin-bottom: 15px;
-            font-size: 1.1em;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+
+        .metrics {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border: 2px solid #e74c3c;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9em;
+            color: #ecf0f1;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .classification-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border: 2px solid #f39c12;
+        }
+
+        .classification-section h3,
+        .classification-section label,
+        .classification-section select {
+            color: #ecf0f1;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
             margin-bottom: 5px;
             color: #ccc;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         select, input[type="range"] {
             width: 100%;
-            padding: 8px;
+            padding: 6px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 5px;
             color: #fff;
+            font-size: 0.85em;
         }
 
         select option {
@@ -114,16 +146,89 @@
             color: #fff;
         }
 
-        .range-value {
-            color: #00d4aa;
+        .access-groups {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .group-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .group-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+
+        .group-name {
             font-weight: bold;
-            margin-left: 10px;
+            font-size: 0.9em;
+        }
+
+        .delete-group {
+            background: #ff4757;
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .group-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8em;
+        }
+
+        .group-controls select {
+            padding: 4px;
+            font-size: 0.8em;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .preset-btn {
+            padding: 6px 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
         }
 
         .movement-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 8px;
             margin-top: 10px;
         }
 
@@ -143,35 +248,13 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
-        button:disabled {
-            background: #333;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .metrics {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        }
-
-        .metric-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .metric-value {
-            font-weight: bold;
-            color: #fff;
-        }
-
         .warning {
             background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%);
-            padding: 10px;
+            padding: 8px;
             border-radius: 5px;
-            margin-top: 10px;
+            margin-top: 8px;
             animation: pulse 2s infinite;
+            font-size: 0.85em;
         }
 
         @keyframes pulse {
@@ -182,52 +265,66 @@
         .reset-btn {
             background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
             width: 100%;
-            margin-top: 20px;
-            padding: 12px;
+            margin-top: 15px;
+            padding: 10px;
         }
 
-        .node {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .node:hover {
-            stroke-width: 3px;
-        }
-
-        .link {
-            transition: all 0.3s ease;
-        }
-
-        .node-label {
-            fill: white;
-            font-size: 12px;
-            text-anchor: middle;
-            pointer-events: none;
+        .add-group-btn {
+            background: linear-gradient(135deg, #00d4aa 0%, #01a3a4 100%);
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
         }
 
         .legend {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             padding: 15px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85em;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
-            font-size: 0.9em;
+            margin-bottom: 6px;
         }
 
         .legend-color {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
             border-radius: 3px;
+        }
+
+        .node-label {
+            fill: white;
+            font-size: 11px;
+            text-anchor: middle;
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        .group-label {
+            fill: white;
+            font-size: 9px;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .management-stress {
+            stroke: #ff9500;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            opacity: 0.6;
+            animation: dash 2s linear infinite;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -10; }
         }
     </style>
 </head>
@@ -236,74 +333,58 @@
         <div class="control-panel">
             <h1>🛡️ PoLP Visualizer</h1>
             
-            <div class="section">
-                <h3>📊 Attack Surface Metrics</h3>
+            <div class="section metrics">
+                <h3>📊 Management Complexity</h3>
                 <div class="metric-item">
-                    <span>Total Attack Surface:</span>
-                    <span id="attackSurface" class="metric-value">1</span>
+                    <span>Total People with Access:</span>
+                    <span id="totalPeople" class="metric-value">0</span>
+                </div>
+                <div class="metric-item">
+                    <span>Active Access Groups:</span>
+                    <span id="activeGroups" class="metric-value">0</span>
                 </div>
                 <div class="metric-item">
                     <span>Data Copies:</span>
                     <span id="dataCopies" class="metric-value">1</span>
                 </div>
                 <div class="metric-item">
-                    <span>Attack Paths:</span>
-                    <span id="attackPaths" class="metric-value">0</span>
+                    <span>Management Overhead:</span>
+                    <span id="managementOverhead" class="metric-value">LOW</span>
                 </div>
                 <div class="metric-item">
-                    <span>Risk Level:</span>
-                    <span id="riskLevel" class="metric-value">LOW</span>
+                    <span>Breach Impact Radius:</span>
+                    <span id="breachRadius" class="metric-value">0</span>
                 </div>
                 <div id="warningMessage"></div>
             </div>
 
-            <div class="section">
-                <h3>👥 Who can see it?</h3>
+            <div class="section classification-section">
+                <h3>🔒 Data Classification</h3>
                 <div class="form-group">
-                    <label>Access Level:</label>
-                    <select id="accessLevel">
-                        <option value="individual">Specific Individual</option>
-                        <option value="team">Small Team (3-5 people)</option>
-                        <option value="department">Department (10-20 people)</option>
-                        <option value="company">Entire Company</option>
-                        <option value="external">External Partners</option>
+                    <label>Classification Level:</label>
+                    <select id="dataClassification">
+                        <option value="confidential" selected>🔐 Confidential (Default)</option>
+                        <option value="restricted">🚫 Restricted (High Security)</option>
+                        <option value="internal">🏢 Internal Only</option>
+                        <option value="unclassified">📋 Unclassified</option>
                     </select>
                 </div>
             </div>
 
             <div class="section">
-                <h3>⚡ What they can do?</h3>
-                <div class="form-group">
-                    <label>Permission Level:</label>
-                    <select id="permissionLevel">
-                        <option value="read">Read Only</option>
-                        <option value="edit">Edit</option>
-                        <option value="admin">Full Control</option>
-                    </select>
+                <h3>👥 Access Groups</h3>
+                <button class="add-group-btn" onclick="addNewGroup()">+ Add Access Group</button>
+                
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="addPresetGroup('executive')">👔 Executive</button>
+                    <button class="preset-btn" onclick="addPresetGroup('development')">💻 Dev Team</button>
+                    <button class="preset-btn" onclick="addPresetGroup('employees')">🏢 All Staff</button>
+                    <button class="preset-btn" onclick="addPresetGroup('partners')">🤝 Partners</button>
+                    <button class="preset-btn" onclick="addPresetGroup('audit')">📋 Audit</button>
                 </div>
-            </div>
 
-            <div class="section">
-                <h3>📍 Where they access from?</h3>
-                <div class="form-group">
-                    <label>Access Location:</label>
-                    <select id="accessLocation">
-                        <option value="office">Office Only</option>
-                        <option value="vpn">Office + VPN</option>
-                        <option value="anywhere">Anywhere</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="section">
-                <h3>⏱️ How long they have access?</h3>
-                <div class="form-group">
-                    <label>Access Duration:</label>
-                    <select id="accessDuration">
-                        <option value="temporary">Temporary (Days)</option>
-                        <option value="project">Project-Based (Months)</option>
-                        <option value="permanent">Permanent</option>
-                    </select>
+                <div id="accessGroups" class="access-groups">
+                    <!-- Groups will be dynamically added here -->
                 </div>
             </div>
 
@@ -339,12 +420,14 @@
                     <span>Data Copy</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: #ff6b6b;"></div>
-                    <span>High Risk Copy</span>
+                    <div style="width: 16px; height: 3px; background: #ff9500; margin-right: 8px;"></div>
+                    <span>Management Stress</span>
                 </div>
                 <div class="legend-item">
-                    <div style="width: 20px; height: 3px; background: #ffd700; margin-right: 10px;"></div>
-                    <span>Thick = High Risk</span>
+                    <span style="margin-left: 24px;">🔐 = Confidential</span>
+                </div>
+                <div class="legend-item">
+                    <span style="margin-left: 24px;">🚫 = Restricted</span>
                 </div>
             </div>
         </div>
@@ -353,17 +436,99 @@
     <script>
         // Global state
         let nodes = [
-            { id: 'original', type: 'original', label: 'Original Data Asset', x: 400, y: 300, risk: 1 }
+            { 
+                id: 'original', 
+                type: 'original', 
+                label: 'Original Data Asset', 
+                x: 400, 
+                y: 300,
+                accessGroups: [],
+                classification: 'confidential'
+            }
         ];
         let links = [];
+        let accessGroups = [];
         let nodeCounter = 1;
+        let groupCounter = 1;
 
-        // Risk calculation factors
-        const riskFactors = {
-            accessLevel: { individual: 1, team: 2, department: 4, company: 8, external: 12 },
-            permissionLevel: { read: 1, edit: 3, admin: 6 },
-            accessLocation: { office: 1, vpn: 2, anywhere: 4 },
-            accessDuration: { temporary: 1, project: 2, permanent: 3 }
+        // Group color palette
+        const groupColors = [
+            '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', 
+            '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
+            '#ffa8b5', '#ff3838', '#2ed573', '#70a1ff', '#5352ed'
+        ];
+
+        // Access level configurations
+        const accessLevels = {
+            individual: { people: 1, complexity: 1 },
+            team: { people: 4, complexity: 2 },
+            department: { people: 15, complexity: 4 },
+            company: { people: 100, complexity: 8 },
+            external: { people: 5, complexity: 6 }
+        };
+
+        const permissionLevels = {
+            read: { risk: 1, complexity: 1 },
+            edit: { risk: 3, complexity: 2 },
+            admin: { risk: 6, complexity: 4 }
+        };
+
+        const locationLevels = {
+            office: { risk: 1, complexity: 1 },
+            vpn: { risk: 2, complexity: 2 },
+            anywhere: { risk: 4, complexity: 3 }
+        };
+
+        const durationLevels = {
+            temporary: { risk: 1, complexity: 2 },
+            project: { risk: 2, complexity: 3 },
+            permanent: { risk: 3, complexity: 1 }
+        };
+
+        const classificationMultipliers = {
+            unclassified: 0.5,
+            internal: 1,
+            confidential: 2,
+            restricted: 4
+        };
+
+        // Preset group configurations
+        const presetGroups = {
+            executive: {
+                name: 'Executive Team',
+                access: 'team',
+                permission: 'admin',
+                location: 'anywhere',
+                duration: 'permanent'
+            },
+            development: {
+                name: 'Development Team',
+                access: 'team',
+                permission: 'admin',
+                location: 'vpn',
+                duration: 'project'
+            },
+            employees: {
+                name: 'All Employees',
+                access: 'company',
+                permission: 'read',
+                location: 'office',
+                duration: 'permanent'
+            },
+            partners: {
+                name: 'External Partners',
+                access: 'external',
+                permission: 'read',
+                location: 'anywhere',
+                duration: 'temporary'
+            },
+            audit: {
+                name: 'Audit Team',
+                access: 'team',
+                permission: 'read',
+                location: 'vpn',
+                duration: 'temporary'
+            }
         };
 
         // Movement type configurations
@@ -378,7 +543,7 @@
 
         // D3 setup
         const svg = d3.select('#networkSvg');
-        const width = window.innerWidth - 350;
+        const width = window.innerWidth - 380;
         const height = window.innerHeight;
         
         svg.attr('width', width).attr('height', height);
@@ -399,81 +564,177 @@
 
         // Create force simulation
         const simulation = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id(d => d.id).distance(100))
-            .force('charge', d3.forceManyBody().strength(-300))
+            .force('link', d3.forceLink(links).id(d => d.id).distance(120))
+            .force('charge', d3.forceManyBody().strength(-400))
             .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collision', d3.forceCollide().radius(30));
+            .force('collision', d3.forceCollide().radius(40));
 
-        // Event listeners for controls
-        document.getElementById('accessLevel').addEventListener('change', updateVisualization);
-        document.getElementById('permissionLevel').addEventListener('change', updateVisualization);
-        document.getElementById('accessLocation').addEventListener('change', updateVisualization);
-        document.getElementById('accessDuration').addEventListener('change', updateVisualization);
+        // Event listeners
+        document.getElementById('dataClassification').addEventListener('change', updateVisualization);
 
-        function calculateRisk() {
-            const accessLevel = document.getElementById('accessLevel').value;
-            const permissionLevel = document.getElementById('permissionLevel').value;
-            const accessLocation = document.getElementById('accessLocation').value;
-            const accessDuration = document.getElementById('accessDuration').value;
-
-            return riskFactors.accessLevel[accessLevel] * 
-                   riskFactors.permissionLevel[permissionLevel] * 
-                   riskFactors.accessLocation[accessLocation] * 
-                   riskFactors.accessDuration[accessDuration];
-        }
-
-        function updateMetrics() {
-            const baseRisk = calculateRisk();
-            let totalAttackSurface = 0;
-            let totalAttackPaths = 0;
-
-            nodes.forEach(node => {
-                const nodeRisk = node.type === 'original' ? baseRisk : baseRisk * node.risk;
-                totalAttackSurface += nodeRisk;
-                node.calculatedRisk = nodeRisk;
-            });
-
-            totalAttackPaths = links.length * baseRisk;
-
-            document.getElementById('attackSurface').textContent = Math.round(totalAttackSurface);
-            document.getElementById('dataCopies').textContent = nodes.length;
-            document.getElementById('attackPaths').textContent = Math.round(totalAttackPaths);
-
-            // Risk level assessment
-            let riskLevel = 'LOW';
-            let warningMessage = '';
-
-            if (totalAttackSurface > 100) {
-                riskLevel = 'CRITICAL';
-                warningMessage = '<div class="warning">⚠️ CRITICAL: Attack surface is extremely high! Consider reducing access and deleting unnecessary data copies.</div>';
-            } else if (totalAttackSurface > 50) {
-                riskLevel = 'HIGH';
-                warningMessage = '<div class="warning">⚠️ HIGH RISK: Too many access points. Apply Principle of Least Privilege!</div>';
-            } else if (totalAttackSurface > 20) {
-                riskLevel = 'MEDIUM';
-            }
-
-            document.getElementById('riskLevel').textContent = riskLevel;
-            document.getElementById('warningMessage').innerHTML = warningMessage;
-        }
-
-        function updateVisualization() {
-            updateMetrics();
+        function addNewGroup() {
+            const groupId = `group_${groupCounter++}`;
+            const group = {
+                id: groupId,
+                name: `Access Group ${groupCounter - 1}`,
+                access: 'individual',
+                permission: 'read',
+                location: 'office',
+                duration: 'temporary',
+                color: groupColors[(groupCounter - 2) % groupColors.length]
+            };
             
-            // Update node colors based on risk
+            accessGroups.push(group);
+            renderAccessGroups();
+            updateVisualization();
+        }
+
+        function addPresetGroup(presetType) {
+            const preset = presetGroups[presetType];
+            const groupId = `group_${groupCounter++}`;
+            const group = {
+                id: groupId,
+                name: preset.name,
+                access: preset.access,
+                permission: preset.permission,
+                location: preset.location,
+                duration: preset.duration,
+                color: groupColors[(groupCounter - 2) % groupColors.length]
+            };
+            
+            accessGroups.push(group);
+            renderAccessGroups();
+            updateVisualization();
+        }
+
+        function deleteGroup(groupId) {
+            accessGroups = accessGroups.filter(g => g.id !== groupId);
+            // Remove group from all nodes
             nodes.forEach(node => {
-                if (node.calculatedRisk > 50) {
-                    node.color = '#ff6b6b';
-                } else if (node.calculatedRisk > 20) {
-                    node.color = '#ffd700';
-                } else if (node.type === 'original') {
-                    node.color = '#00d4aa';
-                } else {
-                    node.color = movementTypes[node.movementType]?.color || '#667eea';
+                node.accessGroups = node.accessGroups.filter(g => g !== groupId);
+            });
+            renderAccessGroups();
+            updateVisualization();
+        }
+
+        function renderAccessGroups() {
+            const container = document.getElementById('accessGroups');
+            container.innerHTML = '';
+
+            accessGroups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-item';
+                groupDiv.innerHTML = `
+                    <div class="group-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="group-color" style="background-color: ${group.color};"></div>
+                            <span class="group-name">${group.name}</span>
+                        </div>
+                        <button class="delete-group" onclick="deleteGroup('${group.id}')">×</button>
+                    </div>
+                    <div class="group-controls">
+                        <select onchange="updateGroupProperty('${group.id}', 'access', this.value)">
+                            <option value="individual" ${group.access === 'individual' ? 'selected' : ''}>Individual</option>
+                            <option value="team" ${group.access === 'team' ? 'selected' : ''}>Small Team</option>
+                            <option value="department" ${group.access === 'department' ? 'selected' : ''}>Department</option>
+                            <option value="company" ${group.access === 'company' ? 'selected' : ''}>Company</option>
+                            <option value="external" ${group.access === 'external' ? 'selected' : ''}>External</option>
+                        </select>
+                        <select onchange="updateGroupProperty('${group.id}', 'permission', this.value)">
+                            <option value="read" ${group.permission === 'read' ? 'selected' : ''}>Read Only</option>
+                            <option value="edit" ${group.permission === 'edit' ? 'selected' : ''}>Edit</option>
+                            <option value="admin" ${group.permission === 'admin' ? 'selected' : ''}>Full Control</option>
+                        </select>
+                        <select onchange="updateGroupProperty('${group.id}', 'location', this.value)">
+                            <option value="office" ${group.location === 'office' ? 'selected' : ''}>Office Only</option>
+                            <option value="vpn" ${group.location === 'vpn' ? 'selected' : ''}>Office + VPN</option>
+                            <option value="anywhere" ${group.location === 'anywhere' ? 'selected' : ''}>Anywhere</option>
+                        </select>
+                        <select onchange="updateGroupProperty('${group.id}', 'duration', this.value)">
+                            <option value="temporary" ${group.duration === 'temporary' ? 'selected' : ''}>Temporary</option>
+                            <option value="project" ${group.duration === 'project' ? 'selected' : ''}>Project-Based</option>
+                            <option value="permanent" ${group.duration === 'permanent' ? 'selected' : ''}>Permanent</option>
+                        </select>
+                    </div>
+                `;
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function updateGroupProperty(groupId, property, value) {
+            const group = accessGroups.find(g => g.id === groupId);
+            if (group) {
+                group[property] = value;
+                updateVisualization();
+            }
+        }
+
+        function calculateNodeMetrics(node) {
+            let totalPeople = 0;
+            let totalRisk = 0;
+            let totalComplexity = 0;
+
+            const classification = document.getElementById('dataClassification').value;
+            const classMultiplier = classificationMultipliers[classification];
+
+            node.accessGroups.forEach(groupId => {
+                const group = accessGroups.find(g => g.id === groupId);
+                if (group) {
+                    const people = accessLevels[group.access].people;
+                    const risk = accessLevels[group.access].complexity * 
+                                permissionLevels[group.permission].risk * 
+                                locationLevels[group.location].risk * 
+                                durationLevels[group.duration].risk * 
+                                classMultiplier;
+                    
+                    const complexity = accessLevels[group.access].complexity + 
+                                     permissionLevels[group.permission].complexity + 
+                                     locationLevels[group.location].complexity + 
+                                     durationLevels[group.duration].complexity;
+
+                    totalPeople += people;
+                    totalRisk += risk;
+                    totalComplexity += complexity;
                 }
             });
 
-            drawNetwork();
+            return { people: totalPeople, risk: totalRisk, complexity: totalComplexity };
+        }
+
+        function updateMetrics() {
+            let totalPeople = 0;
+            let totalComplexity = 0;
+            let maxNodePeople = 0;
+
+            nodes.forEach(node => {
+                const metrics = calculateNodeMetrics(node);
+                totalPeople += metrics.people;
+                totalComplexity += metrics.complexity;
+                maxNodePeople = Math.max(maxNodePeople, metrics.people);
+                node.calculatedMetrics = metrics;
+            });
+
+            const managementOverhead = totalComplexity > 50 ? 'CRITICAL' : 
+                                     totalComplexity > 25 ? 'HIGH' : 
+                                     totalComplexity > 10 ? 'MEDIUM' : 'LOW';
+
+            document.getElementById('totalPeople').textContent = totalPeople;
+            document.getElementById('activeGroups').textContent = accessGroups.length;
+            document.getElementById('dataCopies').textContent = nodes.length;
+            document.getElementById('managementOverhead').textContent = managementOverhead;
+            document.getElementById('breachRadius').textContent = maxNodePeople;
+
+            // Warning messages
+            let warningMessage = '';
+            if (totalComplexity > 50) {
+                warningMessage = '<div class="warning">⚠️ CRITICAL: Management overhead is extremely high! Consider compartmentalizing access by data classification.</div>';
+            } else if (totalComplexity > 25) {
+                warningMessage = '<div class="warning">⚠️ HIGH COMPLEXITY: Too many access groups to manage effectively. Apply Principle of Least Privilege!</div>';
+            } else if (accessGroups.length > 5) {
+                warningMessage = '<div class="warning">💡 TIP: Consider consolidating similar access groups to reduce management burden.</div>';
+            }
+
+            document.getElementById('warningMessage').innerHTML = warningMessage;
         }
 
         function addDataMovement(type) {
@@ -488,7 +749,9 @@
                 risk: config.risk,
                 color: config.color,
                 x: Math.random() * width,
-                y: Math.random() * height
+                y: Math.random() * height,
+                accessGroups: [...nodes[0].accessGroups], // Inherit from original
+                classification: document.getElementById('dataClassification').value
             };
 
             nodes.push(newNode);
@@ -508,103 +771,73 @@
             updateVisualization();
         }
 
+        function updateVisualization() {
+            updateMetrics();
+            drawNetwork();
+        }
+
         function drawNetwork() {
             g.selectAll('*').remove();
 
-            // Create gradient definitions for heatmap effect
+            // Create gradient definitions
             const defs = svg.select('defs').empty() ? svg.append('defs') : svg.select('defs');
-            
-            // Clear existing gradients
             defs.selectAll('*').remove();
+
+            // Management stress lines (behind everything)
+            if (accessGroups.length > 3) {
+                const stressLines = g.append('g')
+                    .attr('class', 'stress-lines');
+            }
+
+            // Draw group halos for each access group
+            const haloGroups = g.append('g').attr('class', 'halo-groups');
             
-            const gradients = ['low', 'medium', 'high', 'critical'];
-            const colors = ['#00d4aa', '#ffd700', '#ff9500', '#ff6b6b'];
-            
-            gradients.forEach((level, i) => {
-                const gradient = defs.append('radialGradient')
-                    .attr('id', `gradient-${level}`)
-                    .attr('cx', '50%')
-                    .attr('cy', '50%')
-                    .attr('r', '80%');
-                
-                gradient.append('stop')
-                    .attr('offset', '0%')
-                    .attr('stop-color', colors[i])
-                    .attr('stop-opacity', 0.3);
-                
-                gradient.append('stop')
-                    .attr('offset', '70%')
-                    .attr('stop-color', colors[i])
-                    .attr('stop-opacity', 0.1);
-                
-                gradient.append('stop')
-                    .attr('offset', '100%')
-                    .attr('stop-color', colors[i])
-                    .attr('stop-opacity', 0.05);
+            accessGroups.forEach(group => {
+                const groupNodes = nodes.filter(n => n.accessGroups.includes(group.id));
+                if (groupNodes.length > 0) {
+                    haloGroups.selectAll(`.halo-${group.id}`)
+                        .data(groupNodes)
+                        .enter().append('circle')
+                        .attr('class', `halo-${group.id}`)
+                        .attr('r', d => {
+                            const metrics = d.calculatedMetrics || { complexity: 0 };
+                            return Math.max(50, metrics.complexity * 8);
+                        })
+                        .attr('fill', group.color)
+                        .attr('opacity', 0.15)
+                        .attr('pointer-events', 'none');
+                }
             });
 
-            // Add heatmap circles FIRST (behind everything)
-            const heatmap = g.append('g')
-                .attr('class', 'heatmap-layer')
-                .selectAll('circle')
-                .data(nodes.filter(d => d.calculatedRisk > 15))
-                .enter().append('circle')
-                .attr('r', d => Math.max(40, Math.min(120, d.calculatedRisk * 1.5)))
-                .attr('fill', d => {
-                    if (d.calculatedRisk > 60) return 'url(#gradient-critical)';
-                    if (d.calculatedRisk > 35) return 'url(#gradient-high)';
-                    if (d.calculatedRisk > 20) return 'url(#gradient-medium)';
-                    return 'url(#gradient-low)';
-                })
-                .attr('pointer-events', 'none');
-
-            // Draw links SECOND (middle layer)
+            // Draw links
             const link = g.append('g')
                 .attr('class', 'links-layer')
                 .selectAll('line')
                 .data(links)
                 .enter().append('line')
                 .attr('class', 'link')
-                .attr('stroke', d => {
-                    const sourceRisk = nodes.find(n => n.id === d.source.id || n.id === d.source)?.calculatedRisk || 1;
-                    const targetRisk = nodes.find(n => n.id === d.target.id || n.id === d.target)?.calculatedRisk || 1;
-                    const avgRisk = (sourceRisk + targetRisk) / 2;
-                    
-                    if (avgRisk > 50) return '#ff4757';
-                    if (avgRisk > 30) return '#ffa502';
-                    if (avgRisk > 15) return '#ffd700';
-                    return '#74b9ff';
-                })
-                .attr('stroke-opacity', 0.9)
-                .attr('stroke-width', d => {
-                    const sourceRisk = nodes.find(n => n.id === d.source.id || n.id === d.source)?.calculatedRisk || 1;
-                    const targetRisk = nodes.find(n => n.id === d.target.id || n.id === d.target)?.calculatedRisk || 1;
-                    const avgRisk = (sourceRisk + targetRisk) / 2;
-                    return Math.max(2, Math.min(8, avgRisk * 0.3));
-                });
+                .attr('stroke', '#74b9ff')
+                .attr('stroke-opacity', 0.8)
+                .attr('stroke-width', d => Math.max(2, d.risk * 3));
 
-            // Draw nodes THIRD (top layer - most visible)
+            // Draw nodes
             const node = g.append('g')
                 .attr('class', 'nodes-layer')
                 .selectAll('circle')
                 .data(nodes)
                 .enter().append('circle')
                 .attr('class', 'node')
-                .attr('r', d => d.type === 'original' ? 28 : 22)
-                .attr('fill', d => d.color || '#667eea')
-                .attr('stroke', d => {
-                    if (d.calculatedRisk > 50) return '#ffffff';
-                    if (d.calculatedRisk > 30) return '#ffd700';
-                    return '#ffffff';
+                .attr('r', d => d.type === 'original' ? 32 : 26)
+                .attr('fill', d => {
+                    if (d.type === 'original') return '#00d4aa';
+                    return d.color || '#667eea';
                 })
-                .attr('stroke-width', d => {
-                    if (d.calculatedRisk > 50) return 4;
-                    if (d.calculatedRisk > 30) return 3;
-                    return 2;
-                })
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', 3)
                 .style('filter', d => {
-                    if (d.calculatedRisk > 50) return 'drop-shadow(0 0 10px #ff4757)';
-                    if (d.calculatedRisk > 30) return 'drop-shadow(0 0 8px #ffa502)';
+                    const metrics = d.calculatedMetrics || { complexity: 0 };
+                    if (metrics.complexity > 20) return 'drop-shadow(0 0 12px #ff4757)';
+                    if (metrics.complexity > 10) return 'drop-shadow(0 0 8px #ffa502)';
                     return 'drop-shadow(0 0 5px rgba(255,255,255,0.3))';
                 })
                 .call(d3.drag()
@@ -612,18 +845,54 @@
                     .on('drag', dragged)
                     .on('end', dragended));
 
-            // Add labels LAST (topmost layer)
+            // Add classification symbols
+            const symbols = g.append('g')
+                .attr('class', 'symbols-layer')
+                .selectAll('text')
+                .data(nodes)
+                .enter().append('text')
+                .attr('class', 'classification-symbol')
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '16px')
+                .attr('dy', 5)
+                .text(d => {
+                    const classification = d.classification || 'confidential';
+                    switch(classification) {
+                        case 'restricted': return '🚫';
+                        case 'confidential': return '🔐';
+                        case 'internal': return '🏢';
+                        case 'unclassified': return '📋';
+                        default: return '🔐';
+                    }
+                });
+
+            // Add node labels
             const labels = g.append('g')
                 .attr('class', 'labels-layer')
                 .selectAll('text')
                 .data(nodes)
                 .enter().append('text')
                 .attr('class', 'node-label')
-                .attr('dy', d => d.type === 'original' ? 40 : 35)
-                .attr('font-weight', 'bold')
-                .attr('font-size', '12px')
+                .attr('dy', d => d.type === 'original' ? 45 : 40)
                 .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
                 .text(d => d.label);
+
+            // Add group labels for nodes with access groups
+            const groupLabels = g.append('g')
+                .attr('class', 'group-labels-layer')
+                .selectAll('text')
+                .data(nodes.filter(n => n.accessGroups && n.accessGroups.length > 0))
+                .enter().append('text')
+                .attr('class', 'group-label')
+                .attr('dy', d => d.type === 'original' ? 60 : 55)
+                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
+                .text(d => {
+                    const groupNames = d.accessGroups.map(groupId => {
+                        const group = accessGroups.find(g => g.id === groupId);
+                        return group ? group.name.split(' ')[0] : '';
+                    }).join(', ');
+                    return groupNames.length > 20 ? groupNames.substring(0, 17) + '...' : groupNames;
+                });
 
             // Update positions on simulation tick
             simulation.on('tick', () => {
@@ -637,13 +906,31 @@
                     .attr('cx', d => d.x)
                     .attr('cy', d => d.y);
 
-                heatmap
-                    .attr('cx', d => d.x)
-                    .attr('cy', d => d.y);
+                symbols
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
 
                 labels
                     .attr('x', d => d.x)
                     .attr('y', d => d.y);
+
+                groupLabels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+
+                // Update all halos to match node positions
+                accessGroups.forEach(group => {
+                    g.selectAll(`.halo-${group.id}`)
+                        .attr('cx', d => d.x)
+                        .attr('cy', d => d.y);
+                });
+
+                // Update stress lines if they exist
+                g.selectAll('.management-stress')
+                    .attr('x1', d => d.x - 30)
+                    .attr('y1', d => d.y - 30)
+                    .attr('x2', d => d.x + 30)
+                    .attr('y2', d => d.y + 30);
             });
         }
 
@@ -687,36 +974,75 @@
 
         function resetVisualization() {
             nodes = [
-                { id: 'original', type: 'original', label: 'Original Data Asset', x: width/2, y: height/2, risk: 1 }
+                { 
+                    id: 'original', 
+                    type: 'original', 
+                    label: 'Original Data Asset', 
+                    x: width/2, 
+                    y: height/2,
+                    accessGroups: [],
+                    classification: 'confidential'
+                }
             ];
             links = [];
+            accessGroups = [];
             nodeCounter = 1;
+            groupCounter = 1;
 
-            // Reset controls to most secure settings
-            document.getElementById('accessLevel').value = 'individual';
-            document.getElementById('permissionLevel').value = 'read';
-            document.getElementById('accessLocation').value = 'office';
-            document.getElementById('accessDuration').value = 'temporary';
+            // Reset classification
+            document.getElementById('dataClassification').value = 'confidential';
 
             simulation.nodes(nodes);
             simulation.force('link').links(links);
             simulation.alpha(1).restart();
 
+            renderAccessGroups();
             updateVisualization();
         }
 
-        // Initialize
-        updateVisualization();
-        drawNetwork();
-
         // Handle window resize
         window.addEventListener('resize', () => {
-            const newWidth = window.innerWidth - 350;
+            const newWidth = window.innerWidth - 380;
             const newHeight = window.innerHeight;
             svg.attr('width', newWidth).attr('height', newHeight);
             simulation.force('center', d3.forceCenter(newWidth / 2, newHeight / 2));
-            svg.call(zoom); // Re-apply zoom behavior
+            svg.call(zoom);
         });
+
+        // Add original data to first group when groups are created
+        function assignOriginalToGroup(groupId) {
+            if (!nodes[0].accessGroups.includes(groupId)) {
+                nodes[0].accessGroups.push(groupId);
+                updateVisualization();
+            }
+        }
+
+        // Override addPresetGroup to automatically assign to original
+        const originalAddPresetGroup = addPresetGroup;
+        addPresetGroup = function(presetType) {
+            const currentGroupCount = accessGroups.length;
+            originalAddPresetGroup(presetType);
+            if (accessGroups.length > currentGroupCount) {
+                const newGroup = accessGroups[accessGroups.length - 1];
+                assignOriginalToGroup(newGroup.id);
+            }
+        };
+
+        // Override addNewGroup to automatically assign to original
+        const originalAddNewGroup = addNewGroup;
+        addNewGroup = function() {
+            const currentGroupCount = accessGroups.length;
+            originalAddNewGroup();
+            if (accessGroups.length > currentGroupCount) {
+                const newGroup = accessGroups[accessGroups.length - 1];
+                assignOriginalToGroup(newGroup.id);
+            }
+        };
+
+        // Initialize
+        renderAccessGroups();
+        updateVisualization();
+        drawNetwork();
     </script>
 </body>
 </html>
