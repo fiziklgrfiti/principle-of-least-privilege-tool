@@ -1946,8 +1946,9 @@
                                     (asset.classification === 'confidential' || asset.classification === 'restricted')) {
                                     classificationViolations++;
                                 }
-                                if (group.access === 'world' && asset.classification !== 'unclassified') {
-                                    classificationViolations += 10; // World access violations count heavily
+                                if (group.access === 'world' && 
+                                    (asset.classification === 'internal' || asset.classification === 'confidential' || asset.classification === 'restricted')) {
+                                    classificationViolations += 10; // World access to non-public data violations count heavily
                                 }
                                 if (group.access === 'company' && asset.classification === 'restricted') {
                                     classificationViolations++;
@@ -2016,8 +2017,14 @@
                 if (metrics.complexity === 'CRITICAL') {
                     warningMessage += '<div class="critical-warning">🚨 Management complexity is critical!</div>';
                 }
-                if (metrics.totalPeople > 1000000000) { // Over 1 billion people
-                    warningMessage += '<div class="critical-warning">🌍 GLOBAL EXPOSURE: Over 1 billion people have data access!</div>';
+                
+                // Check for non-public data with massive exposure (not unclassified)
+                const nonPublicExposure = metrics.classificationTotals.internal + 
+                                        metrics.classificationTotals.confidential + 
+                                        metrics.classificationTotals.restricted;
+                
+                if (nonPublicExposure > 1000000000) { // Over 1 billion people have access to non-public data
+                    warningMessage += '<div class="critical-warning">🌍 CATASTROPHIC BREACH: Over 1 billion people have access to non-public data!</div>';
                 }
                 
                 document.getElementById('warningMessage').innerHTML = warningMessage;
@@ -2037,28 +2044,31 @@
                     if (el) el.style.color = '#fff';
                 });
                 
-                // Apply risk-based coloring
+                // Apply risk-based coloring - ONLY for non-public data
+                
+                // Restricted data - highest risk, should have very limited access
                 if (totals.restricted > 100) {
                     elements.restricted.style.color = '#ff4757'; // Red for high restricted access
                 } else if (totals.restricted > 10) {
                     elements.restricted.style.color = '#ffa502'; // Orange for moderate restricted access
                 }
                 
-                if (totals.confidential > 1000) {
-                    elements.confidential.style.color = '#ff4757'; // Red for high confidential access
-                } else if (totals.confidential > 100) {
-                    elements.confidential.style.color = '#ffa502'; // Orange for moderate confidential access
+                // Confidential data - should be limited to business need
+                if (totals.confidential > 10000) {
+                    elements.confidential.style.color = '#ff4757'; // Red for very high confidential access
+                } else if (totals.confidential > 1000) {
+                    elements.confidential.style.color = '#ffa502'; // Orange for high confidential access
                 }
                 
-                if (totals.internal > 10000) {
+                // Internal data - should stay within organization
+                if (totals.internal > 1000000000) { // World access to internal data = major breach
+                    elements.internal.style.color = '#ff4757'; // Red for global exposure of internal data
+                } else if (totals.internal > 100000) {
                     elements.internal.style.color = '#ffa502'; // Orange for very high internal access
                 }
                 
-                if (totals.unclassified > 1000000000) { // Over 1 billion
-                    elements.unclassified.style.color = '#ff4757'; // Red for global exposure
-                } else if (totals.unclassified > 100000000) { // Over 100 million
-                    elements.unclassified.style.color = '#ffa502'; // Orange for massive exposure
-                }
+                // Unclassified data - NO RISK COLORING (can be public)
+                // Unclassified data can safely be exposed to billions without security risk
             }
             
             // Visualization
@@ -2285,7 +2295,7 @@
                             violationFound = true;
                             violationDescription = `External Access Violation: "${group.name}" (external users) has access to "${asset.label}" (${asset.classification.toUpperCase()}). External users should not access confidential or restricted data.`;
                             recommendation = `Remove external access to this ${asset.classification} asset, or consider downgrading classification if external access is necessary.`;
-                        } else if (group.access === 'world' && asset.classification !== 'unclassified') {
+                        } else if (group.access === 'world' && (asset.classification === 'internal' || asset.classification === 'confidential' || asset.classification === 'restricted')) {
                             violationFound = true;
                             violationDescription = `🚨 MASSIVE EXPOSURE: "${group.name}" (5.7 billion people globally) has access to "${asset.label}" (${asset.classification.toUpperCase()}). This represents a catastrophic data breach scenario.`;
                             recommendation = `IMMEDIATE ACTION REQUIRED: Remove world access from this ${asset.classification} asset. Only unclassified public data should have world-wide access.`;
