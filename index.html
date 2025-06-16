@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoLP Attack Surface Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            height: 100vh;
+        }
+
+        .control-panel {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px;
+            border-right: 2px solid #333;
+            overflow-y: auto;
+        }
+
+        .visualization {
+            position: relative;
+            background: radial-gradient(circle at center, #0f0f23 0%, #000000 100%);
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(0, 212, 170, 0.8);
+            transform: scale(1.1);
+        }
+
+        h1 {
+            color: #00d4aa;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section h3 {
+            color: #00d4aa;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+            font-size: 0.9em;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .range-value {
+            color: #00d4aa;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .movement-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .metrics {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .warning {
+            background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            stroke-width: 3px;
+        }
+
+        .link {
+            transition: all 0.3s ease;
+        }
+
+        .node-label {
+            fill: white;
+            font-size: 12px;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h1>🛡️ PoLP Visualizer</h1>
+            
+            <div class="section">
+                <h3>📊 Attack Surface Metrics</h3>
+                <div class="metric-item">
+                    <span>Total Attack Surface:</span>
+                    <span id="attackSurface" class="metric-value">1</span>
+                </div>
+                <div class="metric-item">
+                    <span>Data Copies:</span>
+                    <span id="dataCopies" class="metric-value">1</span>
+                </div>
+                <div class="metric-item">
+                    <span>Attack Paths:</span>
+                    <span id="attackPaths" class="metric-value">0</span>
+                </div>
+                <div class="metric-item">
+                    <span>Risk Level:</span>
+                    <span id="riskLevel" class="metric-value">LOW</span>
+                </div>
+                <div id="warningMessage"></div>
+            </div>
+
+            <div class="section">
+                <h3>👥 Who can see it?</h3>
+                <div class="form-group">
+                    <label>Access Level:</label>
+                    <select id="accessLevel">
+                        <option value="individual">Specific Individual</option>
+                        <option value="team">Small Team (3-5 people)</option>
+                        <option value="department">Department (10-20 people)</option>
+                        <option value="company">Entire Company</option>
+                        <option value="external">External Partners</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>⚡ What they can do?</h3>
+                <div class="form-group">
+                    <label>Permission Level:</label>
+                    <select id="permissionLevel">
+                        <option value="read">Read Only</option>
+                        <option value="edit">Edit</option>
+                        <option value="admin">Full Control</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📍 Where they access from?</h3>
+                <div class="form-group">
+                    <label>Access Location:</label>
+                    <select id="accessLocation">
+                        <option value="office">Office Only</option>
+                        <option value="vpn">Office + VPN</option>
+                        <option value="anywhere">Anywhere</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>⏱️ How long they have access?</h3>
+                <div class="form-group">
+                    <label>Access Duration:</label>
+                    <select id="accessDuration">
+                        <option value="temporary">Temporary (Days)</option>
+                        <option value="project">Project-Based (Months)</option>
+                        <option value="permanent">Permanent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📤 Data Movement</h3>
+                <div class="movement-buttons">
+                    <button onclick="addDataMovement('backup')">📦 Backup</button>
+                    <button onclick="addDataMovement('sharing')">🤝 Share</button>
+                    <button onclick="addDataMovement('analytics')">📈 Analytics</button>
+                    <button onclick="addDataMovement('development')">💻 Dev/Test</button>
+                    <button onclick="addDataMovement('cloud')">☁️ Cloud</button>
+                    <button onclick="addDataMovement('partner')">🔗 Partner</button>
+                </div>
+            </div>
+
+            <button class="reset-btn" onclick="resetVisualization()">🔄 Reset to Single Asset</button>
+        </div>
+
+        <div class="visualization">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+                <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">⌂</button>
+            </div>
+            <svg id="networkSvg"></svg>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00d4aa;"></div>
+                    <span>Original Data Asset</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #667eea;"></div>
+                    <span>Data Copy</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>High Risk Copy</span>
+                </div>
+                <div class="legend-item">
+                    <div style="width: 20px; height: 3px; background: #ffd700; margin-right: 10px;"></div>
+                    <span>Thick = High Risk</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let nodes = [
+            { id: 'original', type: 'original', label: 'Original Data Asset', x: 400, y: 300, risk: 1 }
+        ];
+        let links = [];
+        let nodeCounter = 1;
+
+        // Risk calculation factors
+        const riskFactors = {
+            accessLevel: { individual: 1, team: 2, department: 4, company: 8, external: 12 },
+            permissionLevel: { read: 1, edit: 3, admin: 6 },
+            accessLocation: { office: 1, vpn: 2, anywhere: 4 },
+            accessDuration: { temporary: 1, project: 2, permanent: 3 }
+        };
+
+        // Movement type configurations
+        const movementTypes = {
+            backup: { label: 'Backup Copy', risk: 1.2, color: '#667eea' },
+            sharing: { label: 'Shared Copy', risk: 1.5, color: '#764ba2' },
+            analytics: { label: 'Analytics Copy', risk: 1.3, color: '#f093fb' },
+            development: { label: 'Dev/Test Copy', risk: 2.0, color: '#f5576c' },
+            cloud: { label: 'Cloud Copy', risk: 1.8, color: '#4facfe' },
+            partner: { label: 'Partner Copy', risk: 2.5, color: '#ff6b6b' }
+        };
+
+        // D3 setup
+        const svg = d3.select('#networkSvg');
+        const width = window.innerWidth - 350;
+        const height = window.innerHeight;
+        
+        svg.attr('width', width).attr('height', height);
+
+        // Add zoom behavior
+        let currentZoom = 1;
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => {
+                currentZoom = event.transform.k;
+                g.attr('transform', event.transform);
+            });
+
+        svg.call(zoom);
+
+        // Main group for all visualization elements
+        const g = svg.append('g');
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(30));
+
+        // Event listeners for controls
+        document.getElementById('accessLevel').addEventListener('change', updateVisualization);
+        document.getElementById('permissionLevel').addEventListener('change', updateVisualization);
+        document.getElementById('accessLocation').addEventListener('change', updateVisualization);
+        document.getElementById('accessDuration').addEventListener('change', updateVisualization);
+
+        function calculateRisk() {
+            const accessLevel = document.getElementById('accessLevel').value;
+            const permissionLevel = document.getElementById('permissionLevel').value;
+            const accessLocation = document.getElementById('accessLocation').value;
+            const accessDuration = document.getElementById('accessDuration').value;
+
+            return riskFactors.accessLevel[accessLevel] * 
+                   riskFactors.permissionLevel[permissionLevel] * 
+                   riskFactors.accessLocation[accessLocation] * 
+                   riskFactors.accessDuration[accessDuration];
+        }
+
+        function updateMetrics() {
+            const baseRisk = calculateRisk();
+            let totalAttackSurface = 0;
+            let totalAttackPaths = 0;
+
+            nodes.forEach(node => {
+                const nodeRisk = node.type === 'original' ? baseRisk : baseRisk * node.risk;
+                totalAttackSurface += nodeRisk;
+                node.calculatedRisk = nodeRisk;
+            });
+
+            totalAttackPaths = links.length * baseRisk;
+
+            document.getElementById('attackSurface').textContent = Math.round(totalAttackSurface);
+            document.getElementById('dataCopies').textContent = nodes.length;
+            document.getElementById('attackPaths').textContent = Math.round(totalAttackPaths);
+
+            // Risk level assessment
+            let riskLevel = 'LOW';
+            let warningMessage = '';
+
+            if (totalAttackSurface > 100) {
+                riskLevel = 'CRITICAL';
+                warningMessage = '<div class="warning">⚠️ CRITICAL: Attack surface is extremely high! Consider reducing access and deleting unnecessary data copies.</div>';
+            } else if (totalAttackSurface > 50) {
+                riskLevel = 'HIGH';
+                warningMessage = '<div class="warning">⚠️ HIGH RISK: Too many access points. Apply Principle of Least Privilege!</div>';
+            } else if (totalAttackSurface > 20) {
+                riskLevel = 'MEDIUM';
+            }
+
+            document.getElementById('riskLevel').textContent = riskLevel;
+            document.getElementById('warningMessage').innerHTML = warningMessage;
+        }
+
+        function updateVisualization() {
+            updateMetrics();
+            
+            // Update node colors based on risk
+            nodes.forEach(node => {
+                if (node.calculatedRisk > 50) {
+                    node.color = '#ff6b6b';
+                } else if (node.calculatedRisk > 20) {
+                    node.color = '#ffd700';
+                } else if (node.type === 'original') {
+                    node.color = '#00d4aa';
+                } else {
+                    node.color = movementTypes[node.movementType]?.color || '#667eea';
+                }
+            });
+
+            drawNetwork();
+        }
+
+        function addDataMovement(type) {
+            const newNodeId = `${type}_${nodeCounter++}`;
+            const config = movementTypes[type];
+            
+            const newNode = {
+                id: newNodeId,
+                type: 'copy',
+                movementType: type,
+                label: config.label,
+                risk: config.risk,
+                color: config.color,
+                x: Math.random() * width,
+                y: Math.random() * height
+            };
+
+            nodes.push(newNode);
+            
+            // Create link to original asset
+            links.push({
+                source: 'original',
+                target: newNodeId,
+                risk: config.risk
+            });
+
+            // Update simulation
+            simulation.nodes(nodes);
+            simulation.force('link').links(links);
+            simulation.alpha(1).restart();
+
+            updateVisualization();
+        }
+
+        function drawNetwork() {
+            g.selectAll('*').remove();
+
+            // Create gradient definitions for heatmap effect
+            const defs = svg.select('defs').empty() ? svg.append('defs') : svg.select('defs');
+            
+            // Clear existing gradients
+            defs.selectAll('*').remove();
+            
+            const gradients = ['low', 'medium', 'high', 'critical'];
+            const colors = ['#00d4aa', '#ffd700', '#ff9500', '#ff6b6b'];
+            
+            gradients.forEach((level, i) => {
+                const gradient = defs.append('radialGradient')
+                    .attr('id', `gradient-${level}`)
+                    .attr('cx', '50%')
+                    .attr('cy', '50%')
+                    .attr('r', '80%');
+                
+                gradient.append('stop')
+                    .attr('offset', '0%')
+                    .attr('stop-color', colors[i])
+                    .attr('stop-opacity', 0.3);
+                
+                gradient.append('stop')
+                    .attr('offset', '70%')
+                    .attr('stop-color', colors[i])
+                    .attr('stop-opacity', 0.1);
+                
+                gradient.append('stop')
+                    .attr('offset', '100%')
+                    .attr('stop-color', colors[i])
+                    .attr('stop-opacity', 0.05);
+            });
+
+            // Add heatmap circles FIRST (behind everything)
+            const heatmap = g.append('g')
+                .attr('class', 'heatmap-layer')
+                .selectAll('circle')
+                .data(nodes.filter(d => d.calculatedRisk > 15))
+                .enter().append('circle')
+                .attr('r', d => Math.max(40, Math.min(120, d.calculatedRisk * 1.5)))
+                .attr('fill', d => {
+                    if (d.calculatedRisk > 60) return 'url(#gradient-critical)';
+                    if (d.calculatedRisk > 35) return 'url(#gradient-high)';
+                    if (d.calculatedRisk > 20) return 'url(#gradient-medium)';
+                    return 'url(#gradient-low)';
+                })
+                .attr('pointer-events', 'none');
+
+            // Draw links SECOND (middle layer)
+            const link = g.append('g')
+                .attr('class', 'links-layer')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('stroke', d => {
+                    const sourceRisk = nodes.find(n => n.id === d.source.id || n.id === d.source)?.calculatedRisk || 1;
+                    const targetRisk = nodes.find(n => n.id === d.target.id || n.id === d.target)?.calculatedRisk || 1;
+                    const avgRisk = (sourceRisk + targetRisk) / 2;
+                    
+                    if (avgRisk > 50) return '#ff4757';
+                    if (avgRisk > 30) return '#ffa502';
+                    if (avgRisk > 15) return '#ffd700';
+                    return '#74b9ff';
+                })
+                .attr('stroke-opacity', 0.9)
+                .attr('stroke-width', d => {
+                    const sourceRisk = nodes.find(n => n.id === d.source.id || n.id === d.source)?.calculatedRisk || 1;
+                    const targetRisk = nodes.find(n => n.id === d.target.id || n.id === d.target)?.calculatedRisk || 1;
+                    const avgRisk = (sourceRisk + targetRisk) / 2;
+                    return Math.max(2, Math.min(8, avgRisk * 0.3));
+                });
+
+            // Draw nodes THIRD (top layer - most visible)
+            const node = g.append('g')
+                .attr('class', 'nodes-layer')
+                .selectAll('circle')
+                .data(nodes)
+                .enter().append('circle')
+                .attr('class', 'node')
+                .attr('r', d => d.type === 'original' ? 28 : 22)
+                .attr('fill', d => d.color || '#667eea')
+                .attr('stroke', d => {
+                    if (d.calculatedRisk > 50) return '#ffffff';
+                    if (d.calculatedRisk > 30) return '#ffd700';
+                    return '#ffffff';
+                })
+                .attr('stroke-width', d => {
+                    if (d.calculatedRisk > 50) return 4;
+                    if (d.calculatedRisk > 30) return 3;
+                    return 2;
+                })
+                .style('filter', d => {
+                    if (d.calculatedRisk > 50) return 'drop-shadow(0 0 10px #ff4757)';
+                    if (d.calculatedRisk > 30) return 'drop-shadow(0 0 8px #ffa502)';
+                    return 'drop-shadow(0 0 5px rgba(255,255,255,0.3))';
+                })
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Add labels LAST (topmost layer)
+            const labels = g.append('g')
+                .attr('class', 'labels-layer')
+                .selectAll('text')
+                .data(nodes)
+                .enter().append('text')
+                .attr('class', 'node-label')
+                .attr('dy', d => d.type === 'original' ? 40 : 35)
+                .attr('font-weight', 'bold')
+                .attr('font-size', '12px')
+                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
+                .text(d => d.label);
+
+            // Update positions on simulation tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                heatmap
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+        }
+
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Zoom control functions
+        function zoomIn() {
+            svg.transition().duration(300).call(
+                zoom.scaleBy, 1.5
+            );
+        }
+
+        function zoomOut() {
+            svg.transition().duration(300).call(
+                zoom.scaleBy, 1 / 1.5
+            );
+        }
+
+        function resetZoom() {
+            svg.transition().duration(500).call(
+                zoom.transform,
+                d3.zoomIdentity
+            );
+        }
+
+        function resetVisualization() {
+            nodes = [
+                { id: 'original', type: 'original', label: 'Original Data Asset', x: width/2, y: height/2, risk: 1 }
+            ];
+            links = [];
+            nodeCounter = 1;
+
+            // Reset controls to most secure settings
+            document.getElementById('accessLevel').value = 'individual';
+            document.getElementById('permissionLevel').value = 'read';
+            document.getElementById('accessLocation').value = 'office';
+            document.getElementById('accessDuration').value = 'temporary';
+
+            simulation.nodes(nodes);
+            simulation.force('link').links(links);
+            simulation.alpha(1).restart();
+
+            updateVisualization();
+        }
+
+        // Initialize
+        updateVisualization();
+        drawNetwork();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const newWidth = window.innerWidth - 350;
+            const newHeight = window.innerHeight;
+            svg.attr('width', newWidth).attr('height', newHeight);
+            simulation.force('center', d3.forceCenter(newWidth / 2, newHeight / 2));
+            svg.call(zoom); // Re-apply zoom behavior
+        });
+    </script>
+</body>
+</html>
