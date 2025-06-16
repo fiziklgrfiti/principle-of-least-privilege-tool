@@ -397,86 +397,6 @@
             display: none;
         }
 
-        /* Keyboard shortcuts helper */
-        .shortcuts {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 0.8em;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            backdrop-filter: blur(10px);
-            max-width: 250px;
-            z-index: 1001;
-        }
-
-        .shortcuts.show {
-            opacity: 1;
-        }
-
-        .shortcuts-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .shortcuts-title {
-            font-weight: bold;
-            color: #00d4aa;
-        }
-
-        .close-shortcuts {
-            background: none;
-            border: none;
-            color: #fff;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-
-        .close-shortcuts:hover {
-            opacity: 1;
-        }
-
-        .shortcuts-content {
-            display: grid;
-            gap: 4px;
-        }
-
-        .shortcut-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 2px 0;
-        }
-
-        .shortcut-key {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 0.85em;
-            min-width: 25px;
-            text-align: center;
-        }
-
-        .shortcut-desc {
-            color: #ccc;
-            flex: 1;
-            margin-left: 8px;
-        }
-
         .error-message {
             background: #ff4757;
             color: white;
@@ -495,6 +415,20 @@
             margin: 5px 0;
             font-size: 0.85em;
             display: none;
+        }
+
+        .copy-link {
+            stroke: #74b9ff;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            stroke-opacity: 0.6;
+            animation: dashFlow 2s linear infinite;
+        }
+
+        @keyframes dashFlow {
+            to {
+                stroke-dashoffset: -10;
+            }
         }
     </style>
 </head>
@@ -658,103 +592,82 @@
                     <div>🔥 = Critical Risk</div>
                 </div>
             </div>
-
-            <div class="shortcuts" id="shortcuts">
-                <div class="shortcuts-header">
-                    <div class="shortcuts-title">Keyboard Shortcuts</div>
-                    <button class="close-shortcuts" onclick="visualizer.hideShortcuts()" title="Close shortcuts">×</button>
-                </div>
-                <div class="shortcuts-content">
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">H</span>
-                        <span class="shortcut-desc">Toggle this help</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">+</span>
-                        <span class="shortcut-desc">Zoom in</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">-</span>
-                        <span class="shortcut-desc">Zoom out</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">0</span>
-                        <span class="shortcut-desc">Reset zoom</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">R</span>
-                        <span class="shortcut-desc">Reset visualization</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">D</span>
-                        <span class="shortcut-desc">Load demo</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">Ctrl+Z</span>
-                        <span class="shortcut-desc">Undo</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span class="shortcut-key">Esc</span>
-                        <span class="shortcut-desc">Close dialogs</span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     <script>
-        // Global state with improved structure
+        // Clean, simplified PoLP Visualizer implementation
         class PolpVisualizer {
             constructor() {
-                this.dataStores = [];
-                this.dataAssets = [];
-                this.accessGroups = [];
-                this.links = [];
-                this.history = []; // For undo/redo functionality
-                this.historyIndex = -1;
+                // Core data structures
+                this.stores = new Map();
+                this.assets = new Map();
+                this.groups = new Map();
+                this.links = new Map();
                 
-                this.storeCounter = 1;
-                this.assetCounter = 1;
-                this.groupCounter = 1;
+                // Counters for unique IDs
+                this.nextStoreId = 1;
+                this.nextAssetId = 1;
+                this.nextGroupId = 1;
+                this.nextLinkId = 1;
+                
+                // UI state
                 this.selectedAssetId = null;
-
+                
                 // D3 setup
+                this.setupD3();
+                
+                // Configuration
+                this.setupConstants();
+                
+                // Initialize with basic data
+                this.initialize();
+            }
+            
+            setupD3() {
                 this.svg = d3.select('#networkSvg');
                 this.width = window.innerWidth - 380;
                 this.height = window.innerHeight;
                 
                 this.svg.attr('width', this.width).attr('height', this.height);
-
-                // Zoom behavior
+                
                 this.zoom = d3.zoom()
                     .scaleExtent([0.1, 4])
                     .on('zoom', (event) => {
                         this.g.attr('transform', event.transform);
                     });
-
+                
                 this.svg.call(this.zoom);
                 this.g = this.svg.append('g');
-
-                // Color schemes and configurations
+            }
+            
+            setupConstants() {
                 this.groupColors = [
                     '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', 
                     '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43'
                 ];
-
+                
                 this.classificationColors = {
                     unclassified: '#2ecc71',
                     internal: '#3498db', 
                     confidential: '#f39c12',
                     restricted: '#e74c3c'
                 };
-
+                
                 this.classificationIcons = {
                     unclassified: '📋',
                     internal: '🏢',
                     confidential: '🔐',
                     restricted: '🚫'
                 };
-
+                
+                this.classificationLevels = {
+                    unclassified: 0,
+                    internal: 1,
+                    confidential: 2,
+                    restricted: 3
+                };
+                
                 this.accessLevels = {
                     individual: { people: 1, complexity: 1 },
                     team: { people: 8, complexity: 2 },
@@ -762,7 +675,7 @@
                     company: { people: 150, complexity: 8 },
                     external: { people: 10, complexity: 6 }
                 };
-
+                
                 this.presetGroups = {
                     executives: {
                         name: 'Executive Team',
@@ -793,366 +706,272 @@
                         duration: 'temporary'
                     }
                 };
-
-                this.movementTypes = {
-                    backup: { label: 'Backup Copy', classification: 'confidential', groups: ['itteam'] },
-                    sharing: { label: 'Shared Copy', classification: 'internal', groups: ['allstaff'] },
-                    analytics: { label: 'Analytics Copy', classification: 'internal', groups: ['analytics'] },
-                    development: { label: 'Dev Copy', classification: 'unclassified', groups: ['developers'] },
-                    cloud: { label: 'Cloud Copy', classification: 'confidential', groups: ['itteam'] },
-                    partner: { label: 'Partner Copy', classification: 'internal', groups: ['external'] }
+                
+                this.movementTemplates = {
+                    backup: { label: 'Backup Copy', classification: 'confidential' },
+                    sharing: { label: 'Shared Copy', classification: 'internal' },
+                    analytics: { label: 'Analytics Copy', classification: 'internal' },
+                    development: { label: 'Dev Copy', classification: 'unclassified' },
+                    cloud: { label: 'Cloud Copy', classification: 'confidential' },
+                    partner: { label: 'Partner Copy', classification: 'internal' }
                 };
-
-                this.initialize();
-                this.setupEventListeners();
             }
-
-            // Save state for undo functionality
-            saveState() {
-                const state = {
-                    dataStores: JSON.parse(JSON.stringify(this.dataStores)),
-                    dataAssets: JSON.parse(JSON.stringify(this.dataAssets)),
-                    accessGroups: JSON.parse(JSON.stringify(this.accessGroups)),
-                    links: JSON.parse(JSON.stringify(this.links)),
-                    storeCounter: this.storeCounter,
-                    assetCounter: this.assetCounter,
-                    groupCounter: this.groupCounter
+            
+            // Core data management
+            createStore(label, classification, x = null, y = null) {
+                const id = `store_${this.nextStoreId++}`;
+                const store = {
+                    id,
+                    label,
+                    classification,
+                    x: x || Math.random() * (this.width * 0.6) + (this.width * 0.2),
+                    y: y || Math.random() * (this.height * 0.6) + (this.height * 0.2),
+                    assetIds: new Set()
+                };
+                this.stores.set(id, store);
+                return store;
+            }
+            
+            createAsset(label, classification, storeId, accessGroups = []) {
+                const id = `asset_${this.nextAssetId++}`;
+                const store = this.stores.get(storeId);
+                
+                const asset = {
+                    id,
+                    label,
+                    classification,
+                    storeId,
+                    accessGroups: new Set(accessGroups),
+                    x: store ? store.x : this.width / 2,
+                    y: store ? store.y : this.height / 2,
+                    isOriginal: true
                 };
                 
-                // Remove future history if we're not at the end
-                this.history = this.history.slice(0, this.historyIndex + 1);
+                this.assets.set(id, asset);
                 
-                // Add new state
-                this.history.push(state);
-                this.historyIndex++;
-                
-                // Limit history size
-                if (this.history.length > 50) {
-                    this.history.shift();
-                    this.historyIndex--;
-                }
-            }
-
-            // Restore state for undo functionality
-            restoreState(state) {
-                this.dataStores = JSON.parse(JSON.stringify(state.dataStores));
-                this.dataAssets = JSON.parse(JSON.stringify(state.dataAssets));
-                this.accessGroups = JSON.parse(JSON.stringify(state.accessGroups));
-                this.links = JSON.parse(JSON.stringify(state.links));
-                this.storeCounter = state.storeCounter;
-                this.assetCounter = state.assetCounter;
-                this.groupCounter = state.groupCounter;
-                
-                this.renderAccessGroups();
-                this.updateVisualization();
-            }
-
-            // Undo last action
-            undo() {
-                if (this.historyIndex > 0) {
-                    this.historyIndex--;
-                    this.restoreState(this.history[this.historyIndex]);
-                    this.showMessage('Action undone', 'success');
-                }
-            }
-
-            // Redo last undone action
-            redo() {
-                if (this.historyIndex < this.history.length - 1) {
-                    this.historyIndex++;
-                    this.restoreState(this.history[this.historyIndex]);
-                    this.showMessage('Action redone', 'success');
-                }
-            }
-
-            // Show user messages
-            showMessage(message, type = 'error', containerId = 'storeErrorMessage') {
-                const container = document.getElementById(containerId);
-                const successContainer = document.getElementById('storeSuccessMessage');
-                
-                // Clear both containers first
-                container.style.display = 'none';
-                successContainer.style.display = 'none';
-                
-                const targetContainer = type === 'success' ? successContainer : container;
-                targetContainer.textContent = message;
-                targetContainer.style.display = 'block';
-                
-                // Auto-hide after 3 seconds
-                setTimeout(() => {
-                    targetContainer.style.display = 'none';
-                }, 3000);
-            }
-
-            // Validate inputs
-            validateStoreName(name) {
-                if (!name || name.trim().length === 0) {
-                    return { valid: false, message: 'Store name cannot be empty' };
+                if (store) {
+                    store.assetIds.add(id);
+                    this.positionAssetsInStore(store);
                 }
                 
-                if (name.trim().length > 50) {
-                    return { valid: false, message: 'Store name must be 50 characters or less' };
-                }
-                
-                if (this.dataStores.some(store => store.label.toLowerCase() === name.trim().toLowerCase())) {
-                    return { valid: false, message: 'A store with this name already exists' };
-                }
-                
-                return { valid: true };
+                return asset;
             }
-
-            // Calculate dynamic store size based on asset count with very generous spacing
-            getStoreSize(store) {
-                const assetCount = store.assets.length;
-                const baseWidth = 220;  // Even larger base width
-                const baseHeight = 160; // Even larger base height
-                
-                if (assetCount <= 1) {
-                    // Single asset gets a comfortable minimum size
-                    return { width: baseWidth, height: baseHeight };
-                }
-                
-                // Calculate grid layout for multiple assets
-                const assetsPerRow = Math.ceil(Math.sqrt(assetCount));
-                const rows = Math.ceil(assetCount / assetsPerRow);
-                
-                // Asset circle radius is 18px, so we need at least 36px + very generous spacing
-                const assetDiameter = 36;
-                const assetSpacing = 100; // Much more spacing between asset centers (was 60)
-                const storePadding = 80; // Even more generous padding around the edge (was 60)
-                const labelSpace = 50; // More space for asset labels below (was 40)
-                
-                // Calculate required dimensions with very generous spacing
-                const contentWidth = Math.max(
-                    (assetsPerRow - 1) * (assetDiameter + assetSpacing) + assetDiameter,
-                    120 // Increased minimum content width
-                );
-                const contentHeight = Math.max(
-                    (rows - 1) * (assetDiameter + assetSpacing) + assetDiameter + labelSpace,
-                    100 // Increased minimum content height
-                );
-                
-                // Add very generous padding around content
-                const width = Math.max(baseWidth, contentWidth + (storePadding * 2));
-                const height = Math.max(baseHeight, contentHeight + (storePadding * 2));
-                
-                return { width, height };
+            
+            createGroup(name, access, permission, location, duration, color = null) {
+                const id = `group_${this.nextGroupId++}`;
+                const group = {
+                    id,
+                    name,
+                    access,
+                    permission,
+                    location,
+                    duration,
+                    color: color || this.groupColors[(this.nextGroupId - 2) % this.groupColors.length]
+                };
+                this.groups.set(id, group);
+                return group;
             }
-
-            // Position assets within their store with very generous spacing
+            
+            createLink(sourceId, targetId, type = 'copy') {
+                const id = `link_${this.nextLinkId++}`;
+                const link = {
+                    id,
+                    sourceId,
+                    targetId,
+                    type
+                };
+                this.links.set(id, link);
+                return link;
+            }
+            
+            // Asset positioning
             positionAssetsInStore(store) {
-                const storeAssets = this.dataAssets.filter(a => a.storeId === store.id);
-                const { width, height } = this.getStoreSize(store);
+                const assetIds = Array.from(store.assetIds);
+                const assets = assetIds.map(id => this.assets.get(id)).filter(Boolean);
                 
-                if (storeAssets.length === 1) {
-                    // Single asset stays centered
-                    storeAssets[0].x = store.x;
-                    storeAssets[0].y = store.y;
-                } else if (storeAssets.length > 1) {
-                    // Multiple assets arranged in grid with very generous spacing
-                    const assetsPerRow = Math.ceil(Math.sqrt(storeAssets.length));
-                    const rows = Math.ceil(storeAssets.length / assetsPerRow);
+                if (assets.length === 0) return;
+                
+                if (assets.length === 1) {
+                    assets[0].x = store.x;
+                    assets[0].y = store.y;
+                } else {
+                    const assetsPerRow = Math.ceil(Math.sqrt(assets.length));
+                    const spacing = 80;
+                    const startX = store.x - ((assetsPerRow - 1) * spacing) / 2;
+                    const startY = store.y - (Math.ceil(assets.length / assetsPerRow - 1) * spacing) / 2;
                     
-                    const assetDiameter = 36;
-                    const assetSpacing = 100; // Much more generous spacing (was 60)
-                    const storePadding = 80; // Much more generous padding (was 60)
-                    const labelSpace = 25; // Space reserved for labels below assets
-                    
-                    // Calculate the actual content area (excluding padding)
-                    const contentWidth = (assetsPerRow - 1) * (assetDiameter + assetSpacing) + assetDiameter;
-                    const contentHeight = (rows - 1) * (assetDiameter + assetSpacing) + assetDiameter;
-                    
-                    // Starting position (top-left of content area)
-                    const startX = store.x - (contentWidth / 2);
-                    const startY = store.y - (contentHeight / 2) - (labelSpace / 2);
-                    
-                    storeAssets.forEach((asset, index) => {
+                    assets.forEach((asset, index) => {
                         const row = Math.floor(index / assetsPerRow);
                         const col = index % assetsPerRow;
-                        
-                        // Calculate position with very generous spacing
-                        asset.x = startX + col * (assetDiameter + assetSpacing) + (assetDiameter / 2);
-                        asset.y = startY + row * (assetDiameter + assetSpacing) + (assetDiameter / 2);
+                        asset.x = startX + col * spacing;
+                        asset.y = startY + row * spacing;
                     });
                 }
             }
-
-            // Initialize with basic setup
-            initialize() {
-                // Create initial store and asset
-                const initialStore = {
-                    id: 'store_1',
-                    label: 'Primary Data Store',
-                    classification: 'confidential',
-                    x: this.width / 2,
-                    y: this.height / 2,
-                    assets: ['asset_1']
-                };
-
-                const initialAsset = {
-                    id: 'asset_1',
-                    label: 'Sensitive Customer Data',
-                    classification: 'confidential',
-                    storeId: 'store_1',
-                    accessGroups: [],
-                    x: this.width / 2,
-                    y: this.height / 2
-                };
-
-                this.dataStores = [initialStore];
-                this.dataAssets = [initialAsset];
-                this.accessGroups = [];
-                this.links = [];
-
-                // Position assets in their stores
-                this.dataStores.forEach(store => {
-                    this.positionAssetsInStore(store);
-                });
-
-                this.saveState(); // Save initial state
-                this.updateVisualization();
+            
+            getStoreSize(store) {
+                const assetCount = store.assetIds.size;
+                const baseWidth = 220;
+                const baseHeight = 160;
+                
+                if (assetCount <= 1) {
+                    return { width: baseWidth, height: baseHeight };
+                }
+                
+                const assetsPerRow = Math.ceil(Math.sqrt(assetCount));
+                const rows = Math.ceil(assetCount / assetsPerRow);
+                const spacing = 80;
+                const padding = 60;
+                
+                const width = Math.max(baseWidth, assetsPerRow * spacing + padding);
+                const height = Math.max(baseHeight, rows * spacing + padding);
+                
+                return { width, height };
             }
-
-            // Data store management
+            
+            // Movement operations (FIXED IMPLEMENTATION)
+            addDataMovement(type) {
+                const template = this.movementTemplates[type];
+                if (!template) return;
+                
+                // Get only original assets (not copies)
+                const originalAssets = Array.from(this.assets.values()).filter(a => a.isOriginal);
+                
+                if (originalAssets.length === 0) {
+                    this.showMessage('No original assets to copy', 'error');
+                    return;
+                }
+                
+                // Create new store for copies
+                const newStore = this.createStore(`${template.label} Store`, template.classification);
+                
+                // Create copies of original assets (without modifying originals)
+                originalAssets.forEach(originalAsset => {
+                    // Create a completely new asset object
+                    const copyAsset = this.createAsset(
+                        `${originalAsset.label} (${template.label})`,
+                        template.classification,
+                        newStore.id,
+                        Array.from(originalAsset.accessGroups) // Copy access groups
+                    );
+                    
+                    // Mark as copy and track source
+                    copyAsset.isOriginal = false;
+                    copyAsset.sourceAssetId = originalAsset.id;
+                    
+                    // Create visual link
+                    this.createLink(originalAsset.id, copyAsset.id, 'copy');
+                });
+                
+                this.updateVisualization();
+                this.showMessage(`${template.label} created with ${originalAssets.length} copies. Originals preserved.`, 'success');
+            }
+            
+            // Store management
             addNewDataStore() {
                 const classification = document.getElementById('newStoreClassification').value;
                 let name = document.getElementById('newStoreName').value.trim();
                 
-                // Validate store name
                 if (!name) {
-                    name = `${classification.charAt(0).toUpperCase() + classification.slice(1)} Store ${this.storeCounter}`;
+                    name = `${classification.charAt(0).toUpperCase() + classification.slice(1)} Store ${this.nextStoreId}`;
                 }
                 
-                const validation = this.validateStoreName(name);
-                if (!validation.valid) {
-                    this.showMessage(validation.message, 'error');
+                // Validate store name
+                const existingStore = Array.from(this.stores.values()).find(s => 
+                    s.label.toLowerCase() === name.toLowerCase()
+                );
+                
+                if (existingStore) {
+                    this.showMessage('A store with this name already exists', 'error');
                     return;
                 }
                 
-                this.saveState(); // Save state before change
+                // Create store with initial asset
+                const store = this.createStore(name, classification);
+                this.createAsset('Data Asset', classification, store.id);
                 
-                const storeId = `store_${this.storeCounter++}`;
-                const assetId = `asset_${this.assetCounter++}`;
-                
-                const newStore = {
-                    id: storeId,
-                    label: name,
-                    classification: classification,
-                    x: Math.random() * (this.width * 0.6) + (this.width * 0.2),
-                    y: Math.random() * (this.height * 0.6) + (this.height * 0.2),
-                    assets: [assetId]
-                };
-                
-                const newAsset = {
-                    id: assetId,
-                    label: 'Data Asset',
-                    classification: classification,
-                    storeId: storeId,
-                    accessGroups: [],
-                    x: newStore.x,
-                    y: newStore.y
-                };
-                
-                this.dataStores.push(newStore);
-                this.dataAssets.push(newAsset);
-                
-                // Clear the name field
+                // Clear input
                 document.getElementById('newStoreName').value = '';
                 
+                this.updateVisualization();
                 this.showMessage(`Store "${name}" created successfully`, 'success');
-                this.updateVisualization();
             }
-
-            // Access group management
+            
+            // Group management
             addNewGroup() {
-                this.saveState(); // Save state before change
-                
-                const groupId = `group_${this.groupCounter++}`;
-                const group = {
-                    id: groupId,
-                    name: `Access Group ${this.groupCounter - 1}`,
-                    access: 'individual',
-                    permission: 'read',
-                    location: 'office',
-                    duration: 'temporary',
-                    color: this.groupColors[(this.groupCounter - 2) % this.groupColors.length]
-                };
-                
-                this.accessGroups.push(group);
+                const group = this.createGroup(
+                    `Access Group ${this.nextGroupId - 1}`,
+                    'individual',
+                    'read',
+                    'office',
+                    'temporary'
+                );
                 this.renderAccessGroups();
                 this.updateVisualization();
             }
-
+            
             addPresetGroup(presetType) {
-                this.saveState(); // Save state before change
-                
                 const preset = this.presetGroups[presetType];
-                const groupId = `group_${this.groupCounter++}`;
-                const group = {
-                    id: groupId,
-                    name: preset.name,
-                    access: preset.access,
-                    permission: preset.permission,
-                    location: preset.location,
-                    duration: preset.duration,
-                    color: this.groupColors[(this.groupCounter - 2) % this.groupColors.length]
-                };
+                if (!preset) return;
                 
-                this.accessGroups.push(group);
+                const group = this.createGroup(
+                    preset.name,
+                    preset.access,
+                    preset.permission,
+                    preset.location,
+                    preset.duration
+                );
                 this.renderAccessGroups();
                 this.updateVisualization();
             }
-
+            
             deleteGroup(groupId) {
-                this.saveState(); // Save state before change
-                
-                this.accessGroups = this.accessGroups.filter(g => g.id !== groupId);
+                this.groups.delete(groupId);
                 
                 // Remove group from all assets
-                this.dataAssets.forEach(asset => {
-                    asset.accessGroups = asset.accessGroups.filter(g => g !== groupId);
+                this.assets.forEach(asset => {
+                    asset.accessGroups.delete(groupId);
                 });
                 
                 this.renderAccessGroups();
                 this.updateVisualization();
             }
-
+            
             updateGroupProperty(groupId, property, value) {
-                const group = this.accessGroups.find(g => g.id === groupId);
-                if (group) {
-                    // Validate group name if that's what's being updated
-                    if (property === 'name') {
-                        if (!value || value.trim().length === 0) {
-                            this.showMessage('Group name cannot be empty', 'error');
-                            // Revert to previous name
-                            this.renderAccessGroups();
-                            return;
-                        }
-                        
-                        const trimmedValue = value.trim();
-                        
-                        // Check for duplicate names (excluding current group)
-                        if (this.accessGroups.some(g => g.id !== groupId && g.name.toLowerCase() === trimmedValue.toLowerCase())) {
-                            this.showMessage('A group with this name already exists', 'error');
-                            this.renderAccessGroups();
-                            return;
-                        }
-                        
-                        group[property] = trimmedValue;
-                        this.showMessage(`Group renamed to "${trimmedValue}"`, 'success');
-                    } else {
-                        group[property] = value;
+                const group = this.groups.get(groupId);
+                if (!group) return;
+                
+                if (property === 'name') {
+                    if (!value || value.trim().length === 0) {
+                        this.showMessage('Group name cannot be empty', 'error');
+                        this.renderAccessGroups();
+                        return;
                     }
                     
-                    this.updateVisualization();
+                    const trimmedValue = value.trim();
+                    const existingGroup = Array.from(this.groups.values()).find(g => 
+                        g.id !== groupId && g.name.toLowerCase() === trimmedValue.toLowerCase()
+                    );
+                    
+                    if (existingGroup) {
+                        this.showMessage('A group with this name already exists', 'error');
+                        this.renderAccessGroups();
+                        return;
+                    }
+                    
+                    group[property] = trimmedValue;
+                } else {
+                    group[property] = value;
                 }
+                
+                this.updateVisualization();
             }
-
+            
             renderAccessGroups() {
                 const container = document.getElementById('accessGroups');
                 container.innerHTML = '';
-
-                this.accessGroups.forEach(group => {
+                
+                this.groups.forEach(group => {
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'group-item';
                     groupDiv.innerHTML = `
@@ -1163,30 +982,29 @@
                                        onchange="visualizer.updateGroupProperty('${group.id}', 'name', this.value)"
                                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); 
                                               border-radius: 3px; padding: 2px 6px; color: #fff; font-size: 0.85em; 
-                                              font-weight: bold; width: 140px;"
-                                       placeholder="Group name">
+                                              font-weight: bold; width: 140px;">
                             </div>
-                            <button class="delete-group" onclick="visualizer.deleteGroup('${group.id}')" title="Delete group">×</button>
+                            <button class="delete-group" onclick="visualizer.deleteGroup('${group.id}')">×</button>
                         </div>
                         <div class="group-controls">
-                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'access', this.value)" title="Access scope">
+                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'access', this.value)">
                                 <option value="individual" ${group.access === 'individual' ? 'selected' : ''}>Individual</option>
                                 <option value="team" ${group.access === 'team' ? 'selected' : ''}>Team</option>
                                 <option value="department" ${group.access === 'department' ? 'selected' : ''}>Department</option>
                                 <option value="company" ${group.access === 'company' ? 'selected' : ''}>Company</option>
                                 <option value="external" ${group.access === 'external' ? 'selected' : ''}>External</option>
                             </select>
-                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'permission', this.value)" title="Permission level">
+                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'permission', this.value)">
                                 <option value="read" ${group.permission === 'read' ? 'selected' : ''}>Read</option>
                                 <option value="edit" ${group.permission === 'edit' ? 'selected' : ''}>Edit</option>
                                 <option value="admin" ${group.permission === 'admin' ? 'selected' : ''}>Admin</option>
                             </select>
-                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'location', this.value)" title="Access location">
+                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'location', this.value)">
                                 <option value="office" ${group.location === 'office' ? 'selected' : ''}>Office</option>
                                 <option value="vpn" ${group.location === 'vpn' ? 'selected' : ''}>VPN</option>
                                 <option value="anywhere" ${group.location === 'anywhere' ? 'selected' : ''}>Anywhere</option>
                             </select>
-                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'duration', this.value)" title="Access duration">
+                            <select onchange="visualizer.updateGroupProperty('${group.id}', 'duration', this.value)">
                                 <option value="temporary" ${group.duration === 'temporary' ? 'selected' : ''}>Temporary</option>
                                 <option value="project" ${group.duration === 'project' ? 'selected' : ''}>Project</option>
                                 <option value="permanent" ${group.duration === 'permanent' ? 'selected' : ''}>Permanent</option>
@@ -1196,76 +1014,24 @@
                     container.appendChild(groupDiv);
                 });
             }
-
-            // Data movement operations
-            addDataMovement(type) {
-                this.saveState(); // Save state before change
-                
-                const config = this.movementTypes[type];
-                const sourceAsset = this.dataAssets[0]; // Use first asset as source
-                
-                if (!sourceAsset) {
-                    this.showMessage('No source asset available for data movement', 'error');
-                    return;
-                }
-                
-                const storeId = `store_${this.storeCounter++}`;
-                const assetId = `asset_${this.assetCounter++}`;
-                
-                // Create new store for the copy
-                const newStore = {
-                    id: storeId,
-                    label: `${config.label} Store`,
-                    classification: config.classification,
-                    x: Math.random() * (this.width * 0.6) + (this.width * 0.2),
-                    y: Math.random() * (this.height * 0.6) + (this.height * 0.2),
-                    assets: [assetId]
-                };
-                
-                // Create new asset copy
-                const newAsset = {
-                    id: assetId,
-                    label: config.label,
-                    classification: config.classification,
-                    storeId: storeId,
-                    accessGroups: [...sourceAsset.accessGroups], // Inherit access groups
-                    x: newStore.x,
-                    y: newStore.y
-                };
-                
-                this.dataStores.push(newStore);
-                this.dataAssets.push(newAsset);
-                
-                // Create link showing data relationship
-                this.links.push({
-                    source: sourceAsset.id,
-                    target: assetId,
-                    type: 'copy'
-                });
-                
-                this.updateVisualization();
-            }
-
-            // Asset management
+            
+            // Asset controls
             showAssetControls(assetId, event) {
                 this.selectedAssetId = assetId;
-                const asset = this.dataAssets.find(a => a.id === assetId);
+                const asset = this.assets.get(assetId);
                 if (!asset) return;
-
+                
                 const controls = document.getElementById('assetControls');
-                const title = document.getElementById('assetControlsTitle');
-                const nameInput = document.getElementById('assetName');
-                const classificationSelect = document.getElementById('assetClassification');
+                document.getElementById('assetControlsTitle').textContent = `${asset.label} Configuration`;
+                document.getElementById('assetName').value = asset.label;
+                document.getElementById('assetClassification').value = asset.classification;
+                
+                // Populate access groups
                 const accessGroupsDiv = document.getElementById('assetAccessGroups');
-
-                title.textContent = `${asset.label} Configuration`;
-                nameInput.value = asset.label;
-                classificationSelect.value = asset.classification;
-
-                // Clear and populate access groups
                 accessGroupsDiv.innerHTML = '';
-                this.accessGroups.forEach(group => {
-                    const isChecked = asset.accessGroups.includes(group.id);
+                
+                this.groups.forEach(group => {
+                    const isChecked = asset.accessGroups.has(group.id);
                     const checkboxDiv = document.createElement('div');
                     checkboxDiv.className = 'checkbox-item';
                     checkboxDiv.innerHTML = `
@@ -1275,46 +1041,27 @@
                     `;
                     accessGroupsDiv.appendChild(checkboxDiv);
                 });
-
-                // Position controls with boundary checking
+                
+                // Position controls
                 const rect = event.target.getBoundingClientRect();
-                const controlsWidth = 280;
-                const controlsHeight = 400;
+                const left = Math.min(event.pageX + 10, window.innerWidth - 300);
+                const top = Math.min(event.pageY + 10, window.innerHeight - 400);
                 
-                let left = Math.min(event.pageX + 10, window.innerWidth - controlsWidth - 20);
-                let top = Math.min(event.pageY + 10, window.innerHeight - controlsHeight - 20);
-                
-                // Ensure controls stay within viewport
-                left = Math.max(20, left);
-                top = Math.max(20, top);
-                
-                controls.style.left = left + 'px';
-                controls.style.top = top + 'px';
+                controls.style.left = Math.max(20, left) + 'px';
+                controls.style.top = Math.max(20, top) + 'px';
                 controls.style.display = 'block';
             }
-
+            
             closeAssetControls() {
-                const controls = document.getElementById('assetControls');
-                if (controls) {
-                    controls.style.display = 'none';
-                }
+                document.getElementById('assetControls').style.display = 'none';
                 this.selectedAssetId = null;
             }
-
+            
             updateSelectedAsset(property, value) {
                 if (!this.selectedAssetId) return;
                 
-                const asset = this.dataAssets.find(a => a.id === this.selectedAssetId);
-                if (!asset) {
-                    console.warn(`Asset with id ${this.selectedAssetId} not found`);
-                    return;
-                }
-                
-                // Validate property updates
-                if (property === 'classification' && !this.classificationColors[value]) {
-                    console.warn(`Invalid classification: ${value}`);
-                    return;
-                }
+                const asset = this.assets.get(this.selectedAssetId);
+                if (!asset) return;
                 
                 if (property === 'label' && (!value || value.trim().length === 0)) {
                     this.showMessage('Asset name cannot be empty', 'error');
@@ -1324,291 +1071,646 @@
                 asset[property] = value.trim ? value.trim() : value;
                 this.updateVisualization();
             }
-
+            
             toggleAssetAccess(assetId, groupId, isChecked) {
-                const asset = this.dataAssets.find(a => a.id === assetId);
+                const asset = this.assets.get(assetId);
                 if (!asset) return;
-
+                
                 if (isChecked) {
-                    if (!asset.accessGroups.includes(groupId)) {
-                        asset.accessGroups.push(groupId);
-                    }
+                    asset.accessGroups.add(groupId);
                 } else {
-                    asset.accessGroups = asset.accessGroups.filter(g => g !== groupId);
+                    asset.accessGroups.delete(groupId);
                 }
-
+                
                 this.updateVisualization();
             }
-
+            
             separateAsset() {
                 if (!this.selectedAssetId) return;
                 
-                const asset = this.dataAssets.find(a => a.id === this.selectedAssetId);
+                const asset = this.assets.get(this.selectedAssetId);
                 if (!asset) return;
                 
-                const currentStore = this.dataStores.find(s => s.id === asset.storeId);
-                if (!currentStore || currentStore.assets.length <= 1) {
-                    this.showMessage('Cannot separate the only asset from a store. Delete the asset instead.', 'error');
+                const currentStore = this.stores.get(asset.storeId);
+                if (!currentStore || currentStore.assetIds.size <= 1) {
+                    this.showMessage('Cannot separate the only asset from a store', 'error');
                     return;
                 }
                 
-                this.saveState(); // Save state before change
-                
-                // Remove asset from current store
-                currentStore.assets = currentStore.assets.filter(a => a !== this.selectedAssetId);
-                
-                // Reposition remaining assets in current store
+                // Remove from current store
+                currentStore.assetIds.delete(this.selectedAssetId);
                 this.positionAssetsInStore(currentStore);
                 
-                // Create new store for this asset
-                const newStoreId = `store_${this.storeCounter++}`;
-                const newStore = {
-                    id: newStoreId,
-                    label: `${asset.label} Store`,
-                    classification: asset.classification,
-                    x: asset.x + 150, // Offset from current position
-                    y: asset.y + 100,
-                    assets: [this.selectedAssetId]
-                };
+                // Create new store
+                const newStore = this.createStore(`${asset.label} Store`, asset.classification, asset.x + 150, asset.y + 100);
                 
-                // Update asset's store reference
-                asset.storeId = newStoreId;
-                
-                this.dataStores.push(newStore);
-                
-                // Position asset in new store
+                // Move asset to new store
+                asset.storeId = newStore.id;
+                newStore.assetIds.add(this.selectedAssetId);
                 this.positionAssetsInStore(newStore);
                 
                 this.closeAssetControls();
                 this.updateVisualization();
             }
-
+            
             deleteSelectedAsset() {
                 if (!this.selectedAssetId) return;
                 
-                const asset = this.dataAssets.find(a => a.id === this.selectedAssetId);
+                const asset = this.assets.get(this.selectedAssetId);
                 if (!asset) return;
                 
-                this.saveState(); // Save state before change
+                const store = this.stores.get(asset.storeId);
                 
-                const store = this.dataStores.find(s => s.id === asset.storeId);
-                
-                // Remove asset from store
+                // Remove from store
                 if (store) {
-                    store.assets = store.assets.filter(a => a !== this.selectedAssetId);
+                    store.assetIds.delete(this.selectedAssetId);
                     
-                    // If store is now empty, remove it
-                    if (store.assets.length === 0) {
-                        this.dataStores = this.dataStores.filter(s => s.id !== asset.storeId);
+                    // Delete empty store
+                    if (store.assetIds.size === 0) {
+                        this.stores.delete(store.id);
                     } else {
-                        // Reposition remaining assets in store
                         this.positionAssetsInStore(store);
                     }
                 }
                 
                 // Remove asset
-                this.dataAssets = this.dataAssets.filter(a => a.id !== this.selectedAssetId);
+                this.assets.delete(this.selectedAssetId);
                 
                 // Remove associated links
-                this.links = this.links.filter(l => l.source !== this.selectedAssetId && l.target !== this.selectedAssetId);
+                const linksToDelete = [];
+                this.links.forEach((link, id) => {
+                    if (link.sourceId === this.selectedAssetId || link.targetId === this.selectedAssetId) {
+                        linksToDelete.push(id);
+                    }
+                });
+                linksToDelete.forEach(id => this.links.delete(id));
                 
                 this.closeAssetControls();
                 this.updateVisualization();
+                this.showMessage('Asset deleted successfully', 'success');
             }
-
-            // PoLP Demo scenario
+            
+            // Metrics calculation
+            calculateMetrics() {
+                let totalPeople = 0;
+                let classificationViolations = 0;
+                let mixedStores = 0;
+                let totalComplexity = 0;
+                
+                // Calculate people with access
+                const uniqueGroups = new Set();
+                this.assets.forEach(asset => {
+                    asset.accessGroups.forEach(groupId => {
+                        if (!uniqueGroups.has(groupId)) {
+                            uniqueGroups.add(groupId);
+                            const group = this.groups.get(groupId);
+                            if (group) {
+                                totalPeople += this.accessLevels[group.access].people;
+                                totalComplexity += this.accessLevels[group.access].complexity;
+                            }
+                        }
+                    });
+                });
+                
+                // Check violations
+                this.stores.forEach(store => {
+                    const storeAssets = Array.from(store.assetIds).map(id => this.assets.get(id)).filter(Boolean);
+                    const classifications = [...new Set(storeAssets.map(a => a.classification))];
+                    
+                    // Mixed classification store
+                    if (classifications.length > 1) {
+                        mixedStores++;
+                    }
+                    
+                    // Classification violations
+                    storeAssets.forEach(asset => {
+                        if (this.classificationLevels[asset.classification] > this.classificationLevels[store.classification]) {
+                            classificationViolations++;
+                        }
+                        
+                        // Access violations
+                        asset.accessGroups.forEach(groupId => {
+                            const group = this.groups.get(groupId);
+                            if (group) {
+                                if (group.access === 'external' && 
+                                    (asset.classification === 'confidential' || asset.classification === 'restricted')) {
+                                    classificationViolations++;
+                                }
+                                if (group.access === 'company' && asset.classification === 'restricted') {
+                                    classificationViolations++;
+                                }
+                            }
+                        });
+                    });
+                });
+                
+                const complexity = totalComplexity > 50 ? 'CRITICAL' : 
+                                 totalComplexity > 25 ? 'HIGH' : 
+                                 totalComplexity > 10 ? 'MEDIUM' : 'LOW';
+                
+                return {
+                    totalPeople,
+                    classificationViolations,
+                    mixedStores,
+                    dataCopies: this.assets.size,
+                    complexity
+                };
+            }
+            
+            updateMetrics() {
+                const metrics = this.calculateMetrics();
+                
+                document.getElementById('totalPeople').textContent = metrics.totalPeople;
+                document.getElementById('classificationViolations').textContent = metrics.classificationViolations;
+                document.getElementById('mixedStores').textContent = metrics.mixedStores;
+                document.getElementById('dataCopies').textContent = metrics.dataCopies;
+                document.getElementById('managementComplexity').textContent = metrics.complexity;
+                
+                // Generate warnings
+                let warningMessage = '';
+                if (metrics.classificationViolations > 0) {
+                    warningMessage += `<div class="critical-warning">🔥 CRITICAL: ${metrics.classificationViolations} classification violation(s) detected!</div>`;
+                }
+                if (metrics.mixedStores > 0) {
+                    warningMessage += `<div class="warning">⚠️ ${metrics.mixedStores} store(s) contain mixed classification data</div>`;
+                }
+                if (metrics.complexity === 'CRITICAL') {
+                    warningMessage += '<div class="critical-warning">🚨 Management complexity is critical!</div>';
+                }
+                
+                document.getElementById('warningMessage').innerHTML = warningMessage;
+            }
+            
+            // Visualization
+            updateVisualization() {
+                this.updateMetrics();
+                this.drawVisualization();
+            }
+            
+            drawVisualization() {
+                this.g.selectAll('*').remove();
+                
+                // Position assets in stores
+                this.stores.forEach(store => {
+                    this.positionAssetsInStore(store);
+                });
+                
+                // Draw stores
+                const storeData = Array.from(this.stores.values());
+                const storeSelection = this.g.selectAll('.store')
+                    .data(storeData, d => d.id)
+                    .enter().append('g')
+                    .attr('class', 'store');
+                
+                // Store rectangles
+                storeSelection.append('rect')
+                    .attr('x', d => {
+                        const { width } = this.getStoreSize(d);
+                        return d.x - width / 2;
+                    })
+                    .attr('y', d => {
+                        const { height } = this.getStoreSize(d);
+                        return d.y - height / 2;
+                    })
+                    .attr('width', d => this.getStoreSize(d).width)
+                    .attr('height', d => this.getStoreSize(d).height)
+                    .attr('fill', d => {
+                        // Check for violations
+                        const storeAssets = Array.from(d.assetIds).map(id => this.assets.get(id)).filter(Boolean);
+                        const hasViolation = storeAssets.some(asset => 
+                            this.classificationLevels[asset.classification] > this.classificationLevels[d.classification]
+                        );
+                        return hasViolation ? '#ff4757' : this.classificationColors[d.classification];
+                    })
+                    .attr('stroke', '#ffffff')
+                    .attr('stroke-width', 2)
+                    .attr('rx', 8)
+                    .style('filter', 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))')
+                    .style('cursor', 'move')
+                    .call(this.createDragBehavior('store'));
+                
+                // Store labels
+                storeSelection.append('text')
+                    .attr('x', d => d.x)
+                    .attr('y', d => {
+                        const { height } = this.getStoreSize(d);
+                        return d.y - height / 2 - 10;
+                    })
+                    .attr('class', 'node-label')
+                    .style('font-size', '12px')
+                    .text(d => d.label);
+                
+                // Store icons
+                storeSelection.append('text')
+                    .attr('x', d => d.x)
+                    .attr('y', d => {
+                        const { height } = this.getStoreSize(d);
+                        return d.y + height / 2 + 20;
+                    })
+                    .style('font-size', '24px')
+                    .style('text-anchor', 'middle')
+                    .text(d => this.classificationIcons[d.classification]);
+                
+                // Draw links
+                const linkData = Array.from(this.links.values());
+                this.g.selectAll('.link')
+                    .data(linkData, d => d.id)
+                    .enter().append('line')
+                    .attr('class', d => `link ${d.type === 'copy' ? 'copy-link' : ''}`)
+                    .attr('x1', d => {
+                        const source = this.assets.get(d.sourceId);
+                        return source ? source.x : 0;
+                    })
+                    .attr('y1', d => {
+                        const source = this.assets.get(d.sourceId);
+                        return source ? source.y : 0;
+                    })
+                    .attr('x2', d => {
+                        const target = this.assets.get(d.targetId);
+                        return target ? target.x : 0;
+                    })
+                    .attr('y2', d => {
+                        const target = this.assets.get(d.targetId);
+                        return target ? target.y : 0;
+                    });
+                
+                // Draw access group halos
+                this.groups.forEach(group => {
+                    const groupAssets = Array.from(this.assets.values()).filter(a => a.accessGroups.has(group.id));
+                    if (groupAssets.length > 0) {
+                        this.g.selectAll(`.halo-${group.id}`)
+                            .data(groupAssets)
+                            .enter().append('circle')
+                            .attr('class', `halo-${group.id}`)
+                            .attr('cx', d => d.x)
+                            .attr('cy', d => d.y)
+                            .attr('r', 40)
+                            .attr('fill', group.color)
+                            .attr('opacity', 0.1)
+                            .attr('stroke', group.color)
+                            .attr('stroke-width', 1)
+                            .attr('stroke-opacity', 0.3);
+                    }
+                });
+                
+                // Draw assets
+                const assetData = Array.from(this.assets.values());
+                const assetSelection = this.g.selectAll('.asset')
+                    .data(assetData, d => d.id)
+                    .enter().append('g')
+                    .attr('class', 'asset');
+                
+                // Asset circles
+                assetSelection.append('circle')
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y)
+                    .attr('r', 18)
+                    .attr('fill', d => {
+                        const store = this.stores.get(d.storeId);
+                        const hasViolation = store && 
+                            this.classificationLevels[d.classification] > this.classificationLevels[store.classification];
+                        return hasViolation ? '#ff4757' : this.classificationColors[d.classification];
+                    })
+                    .attr('stroke', '#ffffff')
+                    .attr('stroke-width', 3)
+                    .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))')
+                    .style('cursor', 'move')
+                    .on('click', (event, d) => {
+                        event.stopPropagation();
+                        this.showAssetControls(d.id, event);
+                    })
+                    .call(this.createDragBehavior('asset'));
+                
+                // Asset labels
+                assetSelection.append('text')
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + 35)
+                    .attr('class', 'node-label')
+                    .style('font-size', '10px')
+                    .text(d => d.label);
+                
+                // Asset icons
+                assetSelection.append('text')
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + 3)
+                    .style('font-size', '12px')
+                    .style('text-anchor', 'middle')
+                    .text(d => this.classificationIcons[d.classification]);
+                
+                // Add violation indicators
+                this.addViolationIndicators();
+            }
+            
+            addViolationIndicators() {
+                const violations = [];
+                
+                this.assets.forEach(asset => {
+                    const store = this.stores.get(asset.storeId);
+                    if (store && this.classificationLevels[asset.classification] > this.classificationLevels[store.classification]) {
+                        violations.push({
+                            x: asset.x + 25,
+                            y: asset.y - 20,
+                            type: 'classification'
+                        });
+                    }
+                });
+                
+                this.g.selectAll('.violation-indicator')
+                    .data(violations)
+                    .enter().append('text')
+                    .attr('class', 'violation-indicator')
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y)
+                    .style('font-size', '16px')
+                    .style('cursor', 'pointer')
+                    .text('⚠️');
+            }
+            
+            createDragBehavior(type) {
+                return d3.drag()
+                    .on('start', (event, d) => this.dragStarted(event, d))
+                    .on('drag', (event, d) => type === 'store' ? this.draggedStore(event, d) : this.draggedAsset(event, d))
+                    .on('end', (event, d) => this.dragEnded(event, d));
+            }
+            
+            dragStarted(event, d) {
+                d.isDragging = true;
+                d.dragOffsetX = event.x - d.x;
+                d.dragOffsetY = event.y - d.y;
+            }
+            
+            draggedStore(event, d) {
+                const newX = event.x - d.dragOffsetX;
+                const newY = event.y - d.dragOffsetY;
+                
+                const { width, height } = this.getStoreSize(d);
+                const margin = Math.max(50, width / 2, height / 2);
+                
+                d.x = Math.max(width/2 + margin, Math.min(this.width - width/2 - margin, newX));
+                d.y = Math.max(height/2 + margin, Math.min(this.height - height/2 - margin, newY));
+                
+                this.positionAssetsInStore(d);
+                this.updatePositions();
+            }
+            
+            draggedAsset(event, d) {
+                const newX = event.x - d.dragOffsetX;
+                const newY = event.y - d.dragOffsetY;
+                
+                const margin = 30;
+                d.x = Math.max(margin, Math.min(this.width - margin, newX));
+                d.y = Math.max(margin, Math.min(this.height - margin, newY));
+                
+                // Highlight potential drop targets
+                this.g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
+                
+                const targetStore = Array.from(this.stores.values()).find(store => {
+                    if (store.id === d.storeId) return false;
+                    const { width, height } = this.getStoreSize(store);
+                    const dx = Math.abs(store.x - d.x);
+                    const dy = Math.abs(store.y - d.y);
+                    return dx < width / 2 && dy < height / 2;
+                });
+                
+                if (targetStore) {
+                    this.g.selectAll('rect')
+                        .filter(storeData => storeData.id === targetStore.id)
+                        .attr('stroke', '#00d4aa')
+                        .attr('stroke-width', 4);
+                }
+                
+                this.updatePositions();
+            }
+            
+            dragEnded(event, d) {
+                if (!d.isDragging) return;
+                d.isDragging = false;
+                
+                this.g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
+                
+                if (d.storeId) { // This is an asset
+                    const targetStore = Array.from(this.stores.values()).find(store => {
+                        if (store.id === d.storeId) return false;
+                        const { width, height } = this.getStoreSize(store);
+                        const dx = Math.abs(store.x - d.x);
+                        const dy = Math.abs(store.y - d.y);
+                        return dx < width / 2 && dy < height / 2;
+                    });
+                    
+                    if (targetStore) {
+                        // Move asset to new store
+                        const oldStore = this.stores.get(d.storeId);
+                        if (oldStore) {
+                            oldStore.assetIds.delete(d.id);
+                            if (oldStore.assetIds.size === 0) {
+                                this.stores.delete(oldStore.id);
+                            } else {
+                                this.positionAssetsInStore(oldStore);
+                            }
+                        }
+                        
+                        targetStore.assetIds.add(d.id);
+                        d.storeId = targetStore.id;
+                        this.positionAssetsInStore(targetStore);
+                        
+                        this.updateVisualization();
+                        this.showMessage(`Moved "${d.label}" to "${targetStore.label}"`, 'success');
+                    } else {
+                        // Snap back to original store
+                        const originalStore = this.stores.get(d.storeId);
+                        if (originalStore) {
+                            this.positionAssetsInStore(originalStore);
+                        }
+                        this.updatePositions();
+                    }
+                } else {
+                    // Store was dragged
+                    this.positionAssetsInStore(d);
+                    this.updatePositions();
+                }
+                
+                delete d.dragOffsetX;
+                delete d.dragOffsetY;
+            }
+            
+            updatePositions() {
+                // Update store positions
+                this.g.selectAll('.store')
+                    .select('rect')
+                    .attr('x', d => {
+                        const { width } = this.getStoreSize(d);
+                        return d.x - width / 2;
+                    })
+                    .attr('y', d => {
+                        const { height } = this.getStoreSize(d);
+                        return d.y - height / 2;
+                    })
+                    .attr('width', d => this.getStoreSize(d).width)
+                    .attr('height', d => this.getStoreSize(d).height);
+                
+                // Update store labels
+                this.g.selectAll('.store')
+                    .select('text:first-of-type')
+                    .attr('x', d => d.x)
+                    .attr('y', d => {
+                        const { height } = this.getStoreSize(d);
+                        return d.y - height / 2 - 10;
+                    });
+                
+                // Update store icons
+                this.g.selectAll('.store')
+                    .select('text:last-of-type')
+                    .attr('x', d => d.x)
+                    .attr('y', d => {
+                        const { height } = this.getStoreSize(d);
+                        return d.y + height / 2 + 20;
+                    });
+                
+                // Update asset positions
+                this.g.selectAll('.asset')
+                    .select('circle')
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                this.g.selectAll('.asset')
+                    .select('text.node-label')
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + 35);
+                
+                this.g.selectAll('.asset')
+                    .select('text:not(.node-label)')
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + 3);
+                
+                // Update access group halos
+                this.groups.forEach(group => {
+                    this.g.selectAll(`.halo-${group.id}`)
+                        .attr('cx', d => d.x)
+                        .attr('cy', d => d.y);
+                });
+                
+                // Update links
+                this.g.selectAll('.link')
+                    .attr('x1', d => {
+                        const source = this.assets.get(d.sourceId);
+                        return source ? source.x : 0;
+                    })
+                    .attr('y1', d => {
+                        const source = this.assets.get(d.sourceId);
+                        return source ? source.y : 0;
+                    })
+                    .attr('x2', d => {
+                        const target = this.assets.get(d.targetId);
+                        return target ? target.x : 0;
+                    })
+                    .attr('y2', d => {
+                        const target = this.assets.get(d.targetId);
+                        return target ? target.y : 0;
+                    });
+            }
+            
+            // Demo scenario
             loadDemo() {
-                this.saveState(); // Save state before change
-                
                 // Clear existing data
-                this.dataStores = [];
-                this.dataAssets = [];
-                this.accessGroups = [];
-                this.links = [];
-                this.storeCounter = 1;
-                this.assetCounter = 1;
-                this.groupCounter = 1;
-
-                // Create access groups that demonstrate PoLP issues
-                const groups = [
-                    {
-                        id: 'group_executives',
-                        name: 'Executive Team',
-                        access: 'team',
-                        permission: 'admin',
-                        location: 'anywhere',
-                        duration: 'permanent',
-                        color: this.groupColors[0]
-                    },
-                    {
-                        id: 'group_allstaff',
-                        name: 'All Staff',
-                        access: 'company',
-                        permission: 'read',
-                        location: 'office',
-                        duration: 'permanent',
-                        color: this.groupColors[1]
-                    },
-                    {
-                        id: 'group_hr',
-                        name: 'HR Department',
-                        access: 'department',
-                        permission: 'edit',
-                        location: 'office',
-                        duration: 'permanent',
-                        color: this.groupColors[2]
-                    },
-                    {
-                        id: 'group_contractors',
-                        name: 'External Contractors',
-                        access: 'external',
-                        permission: 'read',
-                        location: 'anywhere',
-                        duration: 'temporary',
-                        color: this.groupColors[3]
-                    },
-                    {
-                        id: 'group_devs',
-                        name: 'Development Team',
-                        access: 'team',
-                        permission: 'admin',
-                        location: 'vpn',
-                        duration: 'project',
-                        color: this.groupColors[4]
-                    }
-                ];
-
-                this.accessGroups = groups;
-
-                // Create problematic data stores that violate PoLP
+                this.stores.clear();
+                this.assets.clear();
+                this.groups.clear();
+                this.links.clear();
+                this.nextStoreId = 1;
+                this.nextAssetId = 1;
+                this.nextGroupId = 1;
+                this.nextLinkId = 1;
                 
-                // Store 1: Mixed classification store (VIOLATION)
-                const mixedStore = {
-                    id: 'store_mixed',
-                    label: 'Legacy Mixed Database',
-                    classification: 'internal',
-                    x: 200,
-                    y: 200,
-                    assets: ['asset_payroll', 'asset_public']
-                };
-
-                // Restricted payroll data in internal store (VIOLATION)
-                const payrollAsset = {
-                    id: 'asset_payroll',
-                    label: 'Employee Payroll Data',
-                    classification: 'restricted',
-                    storeId: 'store_mixed',
-                    accessGroups: ['group_hr', 'group_allstaff'], // Too broad access (VIOLATION)
-                    x: 200,
-                    y: 200
-                };
-
-                // Public data in same store
-                const publicAsset = {
-                    id: 'asset_public',
-                    label: 'Company Newsletter',
-                    classification: 'unclassified',
-                    storeId: 'store_mixed',
-                    accessGroups: ['group_allstaff'],
-                    x: 200,
-                    y: 200
-                };
-
-                // Store 2: Development environment with production data (VIOLATION)
-                const devStore = {
-                    id: 'store_dev',
-                    label: 'Development Environment',
-                    classification: 'unclassified',
-                    x: 500,
-                    y: 200,
-                    assets: ['asset_customer_dev']
-                };
-
-                const customerDevAsset = {
-                    id: 'asset_customer_dev',
-                    label: 'Customer Data (Dev Copy)',
-                    classification: 'confidential', // Sensitive data in unclassified store (VIOLATION)
-                    storeId: 'store_dev',
-                    accessGroups: ['group_devs', 'group_contractors'], // External access to confidential (VIOLATION)
-                    x: 500,
-                    y: 200
-                };
-
-                // Store 3: Backup with escalated access (VIOLATION)
-                const backupStore = {
-                    id: 'store_backup',
-                    label: 'Cloud Backup',
-                    classification: 'confidential',
-                    x: 350,
-                    y: 400,
-                    assets: ['asset_backup']
-                };
-
-                const backupAsset = {
-                    id: 'asset_backup',
-                    label: 'Full System Backup',
-                    classification: 'restricted',
-                    storeId: 'store_backup',
-                    accessGroups: ['group_executives', 'group_allstaff', 'group_contractors'], // Over-privileged (VIOLATION)
-                    x: 350,
-                    y: 400
-                };
-
-                // Store 4: Properly secured store (COMPLIANT)
-                const secureStore = {
-                    id: 'store_secure',
-                    label: 'Secure HR Vault',
-                    classification: 'restricted',
-                    x: 650,
-                    y: 350,
-                    assets: ['asset_secure_hr']
-                };
-
-                const secureHRAsset = {
-                    id: 'asset_secure_hr',
-                    label: 'Secure Employee Records',
-                    classification: 'restricted',
-                    storeId: 'store_secure',
-                    accessGroups: ['group_hr'], // Properly restricted
-                    x: 650,
-                    y: 350
-                };
-
-                this.dataStores = [mixedStore, devStore, backupStore, secureStore];
-                this.dataAssets = [payrollAsset, publicAsset, customerDevAsset, backupAsset, secureHRAsset];
-
-                // Create links showing problematic data flow
-                this.links = [
-                    {
-                        source: 'asset_payroll',
-                        target: 'asset_customer_dev',
-                        type: 'copy'
-                    },
-                    {
-                        source: 'asset_payroll',
-                        target: 'asset_backup',
-                        type: 'copy'
-                    }
-                ];
-
+                // Create access groups
+                const executivesGroup = this.createGroup('Executive Team', 'team', 'admin', 'anywhere', 'permanent');
+                const allStaffGroup = this.createGroup('All Staff', 'company', 'read', 'office', 'permanent');
+                const hrGroup = this.createGroup('HR Department', 'department', 'edit', 'office', 'permanent');
+                const contractorsGroup = this.createGroup('External Contractors', 'external', 'read', 'anywhere', 'temporary');
+                const devsGroup = this.createGroup('Development Team', 'team', 'admin', 'vpn', 'project');
+                
+                // Create stores with violations
+                const mixedStore = this.createStore('Legacy Mixed Database', 'internal', 200, 200);
+                const devStore = this.createStore('Development Environment', 'unclassified', 500, 200);
+                const backupStore = this.createStore('Cloud Backup', 'confidential', 350, 400);
+                const secureStore = this.createStore('Secure HR Vault', 'restricted', 650, 350);
+                
+                // Create assets with violations
+                const payrollAsset = this.createAsset('Employee Payroll Data', 'restricted', mixedStore.id, [hrGroup.id, allStaffGroup.id]);
+                const publicAsset = this.createAsset('Company Newsletter', 'unclassified', mixedStore.id, [allStaffGroup.id]);
+                const customerDevAsset = this.createAsset('Customer Data (Dev Copy)', 'confidential', devStore.id, [devsGroup.id, contractorsGroup.id]);
+                const backupAsset = this.createAsset('Full System Backup', 'restricted', backupStore.id, [executivesGroup.id, allStaffGroup.id, contractorsGroup.id]);
+                const secureHRAsset = this.createAsset('Secure Employee Records', 'restricted', secureStore.id, [hrGroup.id]);
+                
+                // Create problematic links
+                this.createLink(payrollAsset.id, customerDevAsset.id, 'copy');
+                this.createLink(payrollAsset.id, backupAsset.id, 'copy');
+                
                 this.renderAccessGroups();
                 this.updateVisualization();
                 this.showMessage('Demo scenario loaded with multiple PoLP violations', 'success');
             }
-
-            // Export/Import functionality
+            
+            // Utility functions
+            showMessage(message, type = 'error') {
+                const container = type === 'success' ? 
+                    document.getElementById('storeSuccessMessage') : 
+                    document.getElementById('storeErrorMessage');
+                
+                // Clear both containers
+                document.getElementById('storeErrorMessage').style.display = 'none';
+                document.getElementById('storeSuccessMessage').style.display = 'none';
+                
+                container.textContent = message;
+                container.style.display = 'block';
+                
+                setTimeout(() => {
+                    container.style.display = 'none';
+                }, 3000);
+            }
+            
+            zoomIn() {
+                this.svg.transition().duration(300).call(this.zoom.scaleBy, 1.5);
+            }
+            
+            zoomOut() {
+                this.svg.transition().duration(300).call(this.zoom.scaleBy, 1 / 1.5);
+            }
+            
+            resetZoom() {
+                this.svg.transition().duration(500).call(this.zoom.transform, d3.zoomIdentity);
+            }
+            
+            resetVisualization() {
+                this.stores.clear();
+                this.assets.clear();
+                this.groups.clear();
+                this.links.clear();
+                this.nextStoreId = 1;
+                this.nextAssetId = 1;
+                this.nextGroupId = 1;
+                this.nextLinkId = 1;
+                
+                this.closeAssetControls();
+                this.initialize();
+                this.showMessage('Visualization reset to initial state', 'success');
+            }
+            
             exportConfiguration() {
                 const config = {
                     version: '1.0',
                     timestamp: new Date().toISOString(),
-                    dataStores: this.dataStores,
-                    dataAssets: this.dataAssets,
-                    accessGroups: this.accessGroups,
-                    links: this.links,
+                    stores: Array.from(this.stores.values()),
+                    assets: Array.from(this.assets.values()).map(asset => ({
+                        ...asset,
+                        accessGroups: Array.from(asset.accessGroups)
+                    })),
+                    groups: Array.from(this.groups.values()),
+                    links: Array.from(this.links.values()),
                     counters: {
-                        storeCounter: this.storeCounter,
-                        assetCounter: this.assetCounter,
-                        groupCounter: this.groupCounter
+                        nextStoreId: this.nextStoreId,
+                        nextAssetId: this.nextAssetId,
+                        nextGroupId: this.nextGroupId,
+                        nextLinkId: this.nextLinkId
                     }
                 };
                 
@@ -1624,7 +1726,7 @@
                 
                 this.showMessage('Configuration exported successfully', 'success');
             }
-
+            
             importConfiguration(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -1634,23 +1736,48 @@
                     try {
                         const config = JSON.parse(e.target.result);
                         
-                        // Validate configuration
-                        if (!config.dataStores || !config.dataAssets || !config.accessGroups) {
-                            throw new Error('Invalid configuration file format');
+                        // Clear existing data
+                        this.stores.clear();
+                        this.assets.clear();
+                        this.groups.clear();
+                        this.links.clear();
+                        
+                        // Import stores
+                        if (config.stores) {
+                            config.stores.forEach(store => {
+                                store.assetIds = new Set(store.assetIds || []);
+                                this.stores.set(store.id, store);
+                            });
                         }
                         
-                        this.saveState(); // Save current state before import
+                        // Import assets
+                        if (config.assets) {
+                            config.assets.forEach(asset => {
+                                asset.accessGroups = new Set(asset.accessGroups || []);
+                                this.assets.set(asset.id, asset);
+                            });
+                        }
                         
-                        // Import data
-                        this.dataStores = config.dataStores || [];
-                        this.dataAssets = config.dataAssets || [];
-                        this.accessGroups = config.accessGroups || [];
-                        this.links = config.links || [];
+                        // Import groups
+                        if (config.groups) {
+                            config.groups.forEach(group => {
+                                this.groups.set(group.id, group);
+                            });
+                        }
                         
+                        // Import links
+                        if (config.links) {
+                            config.links.forEach(link => {
+                                this.links.set(link.id, link);
+                            });
+                        }
+                        
+                        // Import counters
                         if (config.counters) {
-                            this.storeCounter = config.counters.storeCounter || 1;
-                            this.assetCounter = config.counters.assetCounter || 1;
-                            this.groupCounter = config.counters.groupCounter || 1;
+                            this.nextStoreId = config.counters.nextStoreId || 1;
+                            this.nextAssetId = config.counters.nextAssetId || 1;
+                            this.nextGroupId = config.counters.nextGroupId || 1;
+                            this.nextLinkId = config.counters.nextLinkId || 1;
                         }
                         
                         this.renderAccessGroups();
@@ -1663,982 +1790,58 @@
                 };
                 reader.readAsText(file);
                 
-                // Reset file input
                 event.target.value = '';
             }
-
-            // Metrics and violation detection
-            calculateMetrics() {
-                let totalPeople = 0;
-                let classificationViolations = 0;
-                let mixedStores = 0;
-                let totalComplexity = 0;
-
-                // Calculate people with access
-                const uniqueGroups = new Set();
-                this.dataAssets.forEach(asset => {
-                    asset.accessGroups.forEach(groupId => {
-                        uniqueGroups.add(groupId);
-                        const group = this.accessGroups.find(g => g.id === groupId);
-                        if (group) {
-                            totalPeople += this.accessLevels[group.access].people;
-                            totalComplexity += this.accessLevels[group.access].complexity;
-                        }
-                    });
-                });
-
-                // Check for classification violations
-                this.dataStores.forEach(store => {
-                    const storeAssets = this.dataAssets.filter(a => a.storeId === store.id);
-                    const classifications = [...new Set(storeAssets.map(a => a.classification))];
-                    
-                    // Mixed classification store
-                    if (classifications.length > 1) {
-                        mixedStores++;
-                    }
-                    
-                    // Assets with higher classification than store
-                    storeAssets.forEach(asset => {
-                        if (this.getClassificationLevel(asset.classification) > this.getClassificationLevel(store.classification)) {
-                            classificationViolations++;
-                        }
-                    });
-                });
-
-                // Check for access violations
-                this.dataAssets.forEach(asset => {
-                    asset.accessGroups.forEach(groupId => {
-                        const group = this.accessGroups.find(g => g.id === groupId);
-                        if (group) {
-                            // External access to confidential/restricted data
-                            if (group.access === 'external' && 
-                                (asset.classification === 'confidential' || asset.classification === 'restricted')) {
-                                classificationViolations++;
-                            }
-                            
-                            // Company-wide access to restricted data
-                            if (group.access === 'company' && asset.classification === 'restricted') {
-                                classificationViolations++;
-                            }
-                        }
-                    });
-                });
-
-                const complexity = totalComplexity > 50 ? 'CRITICAL' : 
-                                 totalComplexity > 25 ? 'HIGH' : 
-                                 totalComplexity > 10 ? 'MEDIUM' : 'LOW';
-
-                return {
-                    totalPeople,
-                    classificationViolations,
-                    mixedStores,
-                    dataCopies: this.dataAssets.length,
-                    complexity
-                };
-            }
-
-            getClassificationLevel(classification) {
-                const levels = { unclassified: 0, internal: 1, confidential: 2, restricted: 3 };
-                return levels[classification] || 0;
-            }
-
-            updateMetrics() {
-                const metrics = this.calculateMetrics();
+            
+            // Initialize with basic setup
+            initialize() {
+                const initialStore = this.createStore('Primary Data Store', 'confidential', this.width / 2, this.height / 2);
+                this.createAsset('Sensitive Customer Data', 'confidential', initialStore.id);
                 
-                document.getElementById('totalPeople').textContent = metrics.totalPeople;
-                document.getElementById('classificationViolations').textContent = metrics.classificationViolations;
-                document.getElementById('mixedStores').textContent = metrics.mixedStores;
-                document.getElementById('dataCopies').textContent = metrics.dataCopies;
-                document.getElementById('managementComplexity').textContent = metrics.complexity;
-
-                // Generate warnings
-                let warningMessage = '';
-                if (metrics.classificationViolations > 0) {
-                    warningMessage += `<div class="critical-warning">🔥 CRITICAL: ${metrics.classificationViolations} classification violation(s) detected!</div>`;
-                }
-                if (metrics.mixedStores > 0) {
-                    warningMessage += `<div class="warning">⚠️ ${metrics.mixedStores} store(s) contain mixed classification data</div>`;
-                }
-                if (metrics.complexity === 'CRITICAL') {
-                    warningMessage += '<div class="critical-warning">🚨 Management complexity is critical - immediate action required!</div>';
-                }
-
-                document.getElementById('warningMessage').innerHTML = warningMessage;
-            }
-
-            // Visualization
-            updateVisualization() {
-                this.updateMetrics();
-                
-                // Position assets within their stores before drawing
-                this.dataStores.forEach(store => {
-                    this.positionAssetsInStore(store);
-                });
-                
-                this.drawVisualization();
-            }
-
-            drawVisualization() {
-                // Clear existing elements
-                this.g.selectAll('*').remove();
-
-                // Position assets in stores first
-                this.dataStores.forEach(store => {
-                    this.positionAssetsInStore(store);
-                });
-
-                // Draw stores (rectangles) with dynamic sizing
-                const storeSelection = this.g.selectAll('.store')
-                    .data(this.dataStores)
-                    .enter().append('g')
-                    .attr('class', 'store');
-
-                // Store rectangles with dynamic sizing
-                storeSelection.append('rect')
-                    .attr('x', d => {
-                        const { width } = this.getStoreSize(d);
-                        return d.x - width / 2;
-                    })
-                    .attr('y', d => {
-                        const { height } = this.getStoreSize(d);
-                        return d.y - height / 2;
-                    })
-                    .attr('width', d => this.getStoreSize(d).width)
-                    .attr('height', d => this.getStoreSize(d).height)
-                    .attr('fill', d => {
-                        // Check for violations
-                        const storeAssets = this.dataAssets.filter(a => a.storeId === d.id);
-                        const hasViolation = storeAssets.some(asset => 
-                            this.getClassificationLevel(asset.classification) > this.getClassificationLevel(d.classification)
-                        );
-                        
-                        return hasViolation ? '#ff4757' : this.classificationColors[d.classification];
-                    })
-                    .attr('stroke', '#ffffff')
-                    .attr('stroke-width', 2)
-                    .attr('rx', 8)
-                    .style('filter', 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))')
-                    .style('cursor', 'move')
-                    .call(d3.drag()
-                        .on('start', (event, d) => this.dragStarted(event, d))
-                        .on('drag', (event, d) => this.draggedStore(event, d))
-                        .on('end', (event, d) => this.dragEnded(event, d)));
-
-                // Store labels
-                storeSelection.append('text')
-                    .attr('x', d => d.x)
-                    .attr('y', d => {
-                        const { height } = this.getStoreSize(d);
-                        return d.y - height / 2 - 10;
-                    })
-                    .attr('class', 'node-label')
-                    .style('font-size', '12px')
-                    .style('pointer-events', 'none')
-                    .text(d => d.label);
-
-                // Store classification icons
-                storeSelection.append('text')
-                    .attr('x', d => d.x)
-                    .attr('y', d => {
-                        const { height } = this.getStoreSize(d);
-                        return d.y + height / 2 + 20;
-                    })
-                    .style('font-size', '24px')
-                    .style('text-anchor', 'middle')
-                    .style('pointer-events', 'none')
-                    .text(d => this.classificationIcons[d.classification]);
-
-                // Draw access group halos first (so they appear behind assets)
-                this.accessGroups.forEach(group => {
-                    const groupAssets = this.dataAssets.filter(a => a.accessGroups.includes(group.id));
-                    if (groupAssets.length > 0) {
-                        this.g.selectAll(`.halo-${group.id}`)
-                            .data(groupAssets)
-                            .enter().append('circle')
-                            .attr('class', `halo-${group.id}`)
-                            .attr('cx', d => d.x)
-                            .attr('cy', d => d.y)
-                            .attr('r', 40)
-                            .attr('fill', group.color)
-                            .attr('opacity', 0.1)
-                            .attr('stroke', group.color)
-                            .attr('stroke-width', 1)
-                            .attr('stroke-opacity', 0.3)
-                            .style('pointer-events', 'none');
-                    }
-                });
-
-                // Draw links
-                this.g.selectAll('.link')
-                    .data(this.links)
-                    .enter().append('line')
-                    .attr('class', 'link')
-                    .attr('x1', d => {
-                        const source = this.dataAssets.find(a => a.id === d.source);
-                        return source ? source.x : 0;
-                    })
-                    .attr('y1', d => {
-                        const source = this.dataAssets.find(a => a.id === d.source);
-                        return source ? source.y : 0;
-                    })
-                    .attr('x2', d => {
-                        const target = this.dataAssets.find(a => a.id === d.target);
-                        return target ? target.x : 0;
-                    })
-                    .attr('y2', d => {
-                        const target = this.dataAssets.find(a => a.id === d.target);
-                        return target ? target.y : 0;
-                    })
-                    .attr('stroke', '#74b9ff')
-                    .attr('stroke-width', 2)
-                    .attr('stroke-opacity', 0.6)
-                    .style('pointer-events', 'none');
-
-                // Draw assets (circles)
-                const assetSelection = this.g.selectAll('.asset')
-                    .data(this.dataAssets)
-                    .enter().append('g')
-                    .attr('class', 'asset');
-
-                // Asset circles
-                assetSelection.append('circle')
-                    .attr('cx', d => d.x)
-                    .attr('cy', d => d.y)
-                    .attr('r', 18)
-                    .attr('fill', d => {
-                        const store = this.dataStores.find(s => s.id === d.storeId);
-                        const hasViolation = store && 
-                            (this.getClassificationLevel(d.classification) > this.getClassificationLevel(store.classification) ||
-                             d.accessGroups.some(groupId => {
-                                 const group = this.accessGroups.find(g => g.id === groupId);
-                                 return group && (
-                                     (group.access === 'external' && (d.classification === 'confidential' || d.classification === 'restricted')) ||
-                                     (group.access === 'company' && d.classification === 'restricted')
-                                 );
-                             }));
-                        
-                        return hasViolation ? '#ff4757' : this.classificationColors[d.classification];
-                    })
-                    .attr('stroke', '#ffffff')
-                    .attr('stroke-width', 3)
-                    .style('filter', d => {
-                        const store = this.dataStores.find(s => s.id === d.storeId);
-                        const hasViolation = store && this.getClassificationLevel(d.classification) > this.getClassificationLevel(store.classification);
-                        return hasViolation ? 'drop-shadow(0 0 15px #ff4757)' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
-                    })
-                    .style('cursor', 'move')
-                    .on('click', (event, d) => {
-                        event.stopPropagation();
-                        this.showAssetControls(d.id, event);
-                    })
-                    .call(d3.drag()
-                        .on('start', (event, d) => this.dragStarted(event, d))
-                        .on('drag', (event, d) => this.draggedAsset(event, d))
-                        .on('end', (event, d) => this.dragEnded(event, d)));
-
-                // Asset labels
-                assetSelection.append('text')
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y + 35)
-                    .attr('class', 'node-label')
-                    .style('font-size', '10px')
-                    .style('pointer-events', 'none')
-                    .text(d => d.label);
-
-                // Asset classification icons
-                assetSelection.append('text')
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y + 3)
-                    .style('font-size', '12px')
-                    .style('text-anchor', 'middle')
-                    .style('pointer-events', 'none')
-                    .text(d => this.classificationIcons[d.classification]);
-
-                // Add violation indicators
-                this.updateViolationIndicators();
-            }
-
-            // Drag handlers with improved offset handling
-            dragStarted(event, d) {
-                d.isDragging = true;
-                // Store initial positions for potential revert
-                d.initialX = d.x;
-                d.initialY = d.y;
-                // Calculate precise offset from mouse to object center
-                d.dragOffsetX = event.x - d.x;
-                d.dragOffsetY = event.y - d.y;
-            }
-
-            draggedStore(event, d) {
-                // Apply offset correction consistently
-                const newX = event.x - d.dragOffsetX;
-                const newY = event.y - d.dragOffsetY;
-                
-                // Boundary checking to prevent dragging outside visible area
-                const { width: storeWidth, height: storeHeight } = this.getStoreSize(d);
-                const margin = Math.max(50, storeWidth / 2, storeHeight / 2); // Dynamic margin based on store size
-                
-                d.x = Math.max(storeWidth/2 + margin, Math.min(this.width - storeWidth/2 - margin, newX));
-                d.y = Math.max(storeHeight/2 + margin, Math.min(this.height - storeHeight/2 - margin, newY));
-                
-                // Update associated assets to maintain their relative positions within the store
-                this.positionAssetsInStore(d);
-                
-                // Update visualization without full redraw for performance
-                this.updatePositions();
-            }
-
-            draggedAsset(event, d) {
-                // Apply offset correction consistently
-                const newX = event.x - d.dragOffsetX;
-                const newY = event.y - d.dragOffsetY;
-                
-                // Boundary checking
-                const margin = 30;
-                d.x = Math.max(margin, Math.min(this.width - margin, newX));
-                d.y = Math.max(margin, Math.min(this.height - margin, newY));
-                
-                // Reset store highlights
-                this.g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
-                
-                // Check if dragging over another store and highlight it
-                const targetStore = this.dataStores.find(store => {
-                    const { width: storeWidth, height: storeHeight } = this.getStoreSize(store);
-                    const dx = Math.abs(store.x - d.x);
-                    const dy = Math.abs(store.y - d.y);
-                    return dx < storeWidth / 2 && dy < storeHeight / 2 && store.id !== d.storeId;
-                });
-                
-                // Visual feedback for potential drop
-                if (targetStore) {
-                    this.g.selectAll('rect')
-                        .filter(storeData => storeData.id === targetStore.id)
-                        .attr('stroke', '#00d4aa')
-                        .attr('stroke-width', 4);
-                }
-                
-                this.updatePositions();
-            }
-
-            dragEnded(event, d) {
-                if (!d.isDragging) return;
-                d.isDragging = false;
-                
-                // Reset all store highlights
-                this.g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
-                
-                // Check if asset was dropped on a different store
-                if (d.storeId) { // This is an asset
-                    const targetStore = this.dataStores.find(store => {
-                        const { width: storeWidth, height: storeHeight } = this.getStoreSize(store);
-                        const dx = Math.abs(store.x - d.x);
-                        const dy = Math.abs(store.y - d.y);
-                        return dx < storeWidth / 2 && dy < storeHeight / 2 && store.id !== d.storeId;
-                    });
-                    
-                    if (targetStore) {
-                        this.saveState(); // Save state before major change
-                        
-                        // Move asset to new store
-                        const oldStore = this.dataStores.find(s => s.id === d.storeId);
-                        if (oldStore) {
-                            oldStore.assets = oldStore.assets.filter(a => a !== d.id);
-                            
-                            // Remove empty store
-                            if (oldStore.assets.length === 0) {
-                                this.dataStores = this.dataStores.filter(s => s.id !== oldStore.id);
-                            } else {
-                                // Reposition remaining assets in old store
-                                this.positionAssetsInStore(oldStore);
-                            }
-                        }
-                        
-                        // Add to new store
-                        targetStore.assets.push(d.id);
-                        d.storeId = targetStore.id;
-                        
-                        // Position assets in new store
-                        this.positionAssetsInStore(targetStore);
-                        
-                        // Full redraw after successful drop
-                        this.updateVisualization();
-                    } else {
-                        // Asset dragged outside any store - reposition in original store
-                        const originalStore = this.dataStores.find(s => s.id === d.storeId);
-                        if (originalStore) {
-                            this.positionAssetsInStore(originalStore);
-                        }
-                        this.updatePositions();
-                    }
-                } else {
-                    // Store was dragged, reposition its assets
-                    this.positionAssetsInStore(d);
-                    this.updatePositions();
-                }
-                
-                // Clean up drag properties
-                delete d.dragOffsetX;
-                delete d.dragOffsetY;
-                delete d.initialX;
-                delete d.initialY;
-            }
-
-            // Performance optimized position update during drag
-            updatePositions() {
-                // Update store positions with dynamic sizing
-                this.g.selectAll('.store')
-                    .select('rect')
-                    .attr('x', d => {
-                        const { width } = this.getStoreSize(d);
-                        return d.x - width / 2;
-                    })
-                    .attr('y', d => {
-                        const { height } = this.getStoreSize(d);
-                        return d.y - height / 2;
-                    })
-                    .attr('width', d => this.getStoreSize(d).width)
-                    .attr('height', d => this.getStoreSize(d).height);
-                    
-                // Update store labels - fixed selector
-                this.g.selectAll('.store')
-                    .select('text:first-of-type')
-                    .attr('x', d => d.x)
-                    .attr('y', d => {
-                        const { height } = this.getStoreSize(d);
-                        return d.y - height / 2 - 10;
-                    });
-                    
-                // Update store icons - fixed selector
-                this.g.selectAll('.store')
-                    .select('text:last-of-type')
-                    .attr('x', d => d.x)
-                    .attr('y', d => {
-                        const { height } = this.getStoreSize(d);
-                        return d.y + height / 2 + 20;
-                    });
-
-                // Update asset positions
-                this.g.selectAll('.asset')
-                    .select('circle')
-                    .attr('cx', d => d.x)
-                    .attr('cy', d => d.y);
-                    
-                // Update asset labels specifically
-                this.g.selectAll('.asset')
-                    .select('text.node-label')
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y + 35);
-                    
-                // Update asset classification icons specifically
-                this.g.selectAll('.asset')
-                    .select('text:not(.node-label)')
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y + 3);
-
-                // Update access group halos
-                this.accessGroups.forEach(group => {
-                    this.g.selectAll(`.halo-${group.id}`)
-                        .attr('cx', d => d.x)
-                        .attr('cy', d => d.y);
-                });
-
-                // Update links
-                this.g.selectAll('.link')
-                    .attr('x1', d => {
-                        const source = this.dataAssets.find(a => a.id === d.source);
-                        return source ? source.x : 0;
-                    })
-                    .attr('y1', d => {
-                        const source = this.dataAssets.find(a => a.id === d.source);
-                        return source ? source.y : 0;
-                    })
-                    .attr('x2', d => {
-                        const target = this.dataAssets.find(a => a.id === d.target);
-                        return target ? target.x : 0;
-                    })
-                    .attr('y2', d => {
-                        const target = this.dataAssets.find(a => a.id === d.target);
-                        return target ? target.y : 0;
-                    });
-
-                // Update violation indicators positions
-                this.updateViolationIndicators();
-            }
-
-            // Update violation indicators during drag operations
-            updateViolationIndicators() {
-                // Remove existing indicators
-                this.g.selectAll('.violation-indicator').remove();
-                
-                // Recalculate violation data
-                const violationData = this.calculateViolationData();
-
-                // Draw violation indicators
-                this.g.selectAll('.violation-indicator')
-                    .data(violationData, d => d.id)
-                    .enter().append('text')
-                    .attr('class', 'violation-indicator')
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y)
-                    .style('font-size', '16px')
-                    .style('pointer-events', 'all')
-                    .style('cursor', 'pointer')
-                    .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
-                    .text(d => d.type === 'mixed' ? '🔥' : '⚠️')
-                    .on('click', (event, d) => {
-                        event.stopPropagation();
-                        this.showViolationDetails(d, event);
-                    });
-            }
-
-            // Calculate violation data
-            calculateViolationData() {
-                const violationData = [];
-                
-                this.dataAssets.forEach(asset => {
-                    const store = this.dataStores.find(s => s.id === asset.storeId);
-                    if (store) {
-                        const classificationViolation = this.getClassificationLevel(asset.classification) > this.getClassificationLevel(store.classification);
-                        
-                        if (classificationViolation) {
-                            violationData.push({
-                                id: `violation_${asset.id}`,
-                                x: asset.x + 25,
-                                y: asset.y - 20,
-                                type: 'classification',
-                                assetId: asset.id,
-                                storeId: store.id,
-                                assetName: asset.label,
-                                storeName: store.label,
-                                assetClassification: asset.classification,
-                                storeClassification: store.classification,
-                                description: `Classification Mismatch: "${asset.label}" (${asset.classification.toUpperCase()}) is stored in "${store.label}" (${store.classification.toUpperCase()}). Assets should not have higher classification than their storage location.`,
-                                severity: 'HIGH',
-                                recommendation: `Move this asset to a ${asset.classification} classified store, or downgrade the asset classification if appropriate.`
-                            });
-                        }
-                        
-                        // Check for access violations
-                        const accessViolations = [];
-                        asset.accessGroups.forEach(groupId => {
-                            const group = this.accessGroups.find(g => g.id === groupId);
-                            if (group) {
-                                if (group.access === 'external' && (asset.classification === 'confidential' || asset.classification === 'restricted')) {
-                                    accessViolations.push({
-                                        groupName: group.name,
-                                        groupAccess: group.access,
-                                        issue: 'External users should not have access to confidential or restricted data'
-                                    });
-                                }
-                                
-                                if (group.access === 'company' && asset.classification === 'restricted') {
-                                    accessViolations.push({
-                                        groupName: group.name,
-                                        groupAccess: group.access,
-                                        issue: 'Company-wide access to restricted data violates need-to-know principle'
-                                    });
-                                }
-                                
-                                if (group.location === 'anywhere' && asset.classification === 'restricted') {
-                                    accessViolations.push({
-                                        groupName: group.name,
-                                        groupAccess: group.access,
-                                        issue: 'Restricted data should not be accessible from anywhere'
-                                    });
-                                }
-                            }
-                        });
-                        
-                        if (accessViolations.length > 0) {
-                            violationData.push({
-                                id: `access_violation_${asset.id}`,
-                                x: asset.x - 25,
-                                y: asset.y - 20,
-                                type: 'access',
-                                assetId: asset.id,
-                                assetName: asset.label,
-                                assetClassification: asset.classification,
-                                violations: accessViolations,
-                                description: `Access Control Violation: "${asset.label}" (${asset.classification.toUpperCase()}) has inappropriate access permissions.`,
-                                severity: 'CRITICAL',
-                                recommendation: 'Review and restrict access groups to follow principle of least privilege.'
-                            });
-                        }
-                    }
-                });
-
-                // Check for mixed classification stores
-                this.dataStores.forEach(store => {
-                    const storeAssets = this.dataAssets.filter(a => a.storeId === store.id);
-                    const classifications = [...new Set(storeAssets.map(a => a.classification))];
-                    
-                    if (classifications.length > 1) {
-                        const assetDetails = storeAssets.map(a => `"${a.label}" (${a.classification.toUpperCase()})`).join(', ');
-                        violationData.push({
-                            id: `mixed_${store.id}`,
-                            x: store.x + 70,
-                            y: store.y - 50,
-                            type: 'mixed',
-                            storeId: store.id,
-                            storeName: store.label,
-                            classifications: classifications,
-                            assets: assetDetails,
-                            description: `Mixed Classification Storage: "${store.label}" contains assets with different classification levels: ${classifications.map(c => c.toUpperCase()).join(', ')}.`,
-                            severity: 'CRITICAL',
-                            recommendation: 'Separate assets into stores matching their classification levels to maintain proper data compartmentalization.'
-                        });
-                    }
-                });
-
-                return violationData;
-            }
-
-            // Show detailed violation information with improved memory management
-            showViolationDetails(violationData, event) {
-                // Clean up any existing popup and its event listeners
-                const existingPopup = d3.select('#violationDetails');
-                if (!existingPopup.empty()) {
-                    existingPopup.selectAll('*').on('click', null);
-                    existingPopup.remove();
-                }
-                
-                // Create violation details popup with boundary checking
-                const controlsWidth = 420;
-                const controlsHeight = 350;
-                
-                let left = Math.min(event.pageX + 10, window.innerWidth - controlsWidth - 20);
-                let top = Math.min(event.pageY + 10, window.innerHeight - controlsHeight - 20);
-                
-                left = Math.max(20, left);
-                top = Math.max(20, top);
-                
-                const popup = d3.select('body')
-                    .append('div')
-                    .attr('id', 'violationDetails')
-                    .style('position', 'absolute')
-                    .style('background', 'rgba(0, 0, 0, 0.95)')
-                    .style('color', 'white')
-                    .style('padding', '15px')
-                    .style('border-radius', '8px')
-                    .style('border', '2px solid #ff4757')
-                    .style('font-size', '14px')
-                    .style('max-width', controlsWidth + 'px')
-                    .style('max-height', controlsHeight + 'px')
-                    .style('overflow-y', 'auto')
-                    .style('z-index', '10000')
-                    .style('box-shadow', '0 4px 12px rgba(0,0,0,0.5)')
-                    .style('left', left + 'px')
-                    .style('top', top + 'px');
-
-                // Add close button with proper cleanup
-                popup.append('div')
-                    .style('text-align', 'right')
-                    .style('margin-bottom', '10px')
-                    .append('button')
-                    .style('background', 'none')
-                    .style('border', 'none')
-                    .style('color', 'white')
-                    .style('font-size', '16px')
-                    .style('cursor', 'pointer')
-                    .text('×')
-                    .on('click', function() {
-                        d3.select('#violationDetails').selectAll('*').on('click', null);
-                        d3.select('#violationDetails').remove();
-                    });
-
-                // Add severity indicator
-                const severityColor = violationData.severity === 'CRITICAL' ? '#ff4757' : '#ffa502';
-                popup.append('div')
-                    .style('color', severityColor)
-                    .style('font-weight', 'bold')
-                    .style('margin-bottom', '8px')
-                    .html(`🚨 ${violationData.severity} VIOLATION`);
-
-                // Add main description
-                popup.append('div')
-                    .style('margin-bottom', '12px')
-                    .style('line-height', '1.4')
-                    .text(violationData.description);
-
-                // Add specific violation details based on type
-                if (violationData.type === 'access' && violationData.violations) {
-                    popup.append('div')
-                        .style('margin-bottom', '10px')
-                        .style('font-weight', 'bold')
-                        .text('Specific Issues:');
-                    
-                    violationData.violations.forEach(violation => {
-                        popup.append('div')
-                            .style('margin-left', '15px')
-                            .style('margin-bottom', '5px')
-                            .style('color', '#ffa502')
-                            .text(`• ${violation.groupName}: ${violation.issue}`);
-                    });
-                }
-
-                if (violationData.type === 'mixed') {
-                    popup.append('div')
-                        .style('margin-bottom', '10px')
-                        .style('font-weight', 'bold')
-                        .text('Assets in this store:');
-                    
-                    popup.append('div')
-                        .style('margin-left', '15px')
-                        .style('margin-bottom', '10px')
-                        .style('color', '#74b9ff')
-                        .style('word-wrap', 'break-word')
-                        .text(violationData.assets);
-                }
-
-                // Add recommendation
-                popup.append('div')
-                    .style('margin-top', '12px')
-                    .style('padding-top', '12px')
-                    .style('border-top', '1px solid rgba(255,255,255,0.3)')
-                    .style('font-weight', 'bold')
-                    .style('color', '#00d4aa')
-                    .text('💡 Recommendation:');
-                
-                popup.append('div')
-                    .style('margin-top', '5px')
-                    .style('color', '#ecf0f1')
-                    .style('line-height', '1.4')
-                    .text(violationData.recommendation);
-
-                // Auto-close with cleanup after 10 seconds
-                setTimeout(() => {
-                    const popup = d3.select('#violationDetails');
-                    if (!popup.empty()) {
-                        popup.selectAll('*').on('click', null);
-                        popup.remove();
-                    }
-                }, 10000);
-            }
-
-            // Zoom controls
-            zoomIn() {
-                this.svg.transition().duration(300).call(this.zoom.scaleBy, 1.5);
-            }
-
-            zoomOut() {
-                this.svg.transition().duration(300).call(this.zoom.scaleBy, 1 / 1.5);
-            }
-
-            resetZoom() {
-                this.svg.transition().duration(500).call(this.zoom.transform, d3.zoomIdentity);
-            }
-
-            // Reset function with improved cleanup
-            resetVisualization() {
-                // Clean up any existing popups and their event listeners
-                d3.select('#violationDetails').selectAll('*').on('click', null);
-                d3.select('#violationDetails').remove();
-                
-                this.saveState(); // Save current state before reset
-                
-                this.dataStores = [];
-                this.dataAssets = [];
-                this.accessGroups = [];
-                this.links = [];
-                this.storeCounter = 1;
-                this.assetCounter = 1;
-                this.groupCounter = 1;
-                
-                this.closeAssetControls();
-                this.initialize();
-                this.showMessage('Visualization reset to initial state', 'success');
-            }
-
-            // Event listeners setup
-            setupEventListeners() {
-                // Global click handler
-                document.addEventListener('click', (event) => {
-                    if (!event.target.closest('.asset-controls') && !event.target.closest('.asset')) {
-                        this.closeAssetControls();
-                    }
-                    
-                    // Close violation details if clicking outside
-                    if (!event.target.closest('#violationDetails') && !event.target.closest('.violation-indicator')) {
-                        const popup = d3.select('#violationDetails');
-                        if (!popup.empty()) {
-                            popup.selectAll('*').on('click', null);
-                            popup.remove();
-                        }
-                    }
-                });
-
-                // Keyboard shortcuts
-                document.addEventListener('keydown', (event) => {
-                    // Don't trigger shortcuts when typing in inputs
-                    if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT') {
-                        return;
-                    }
-
-                    switch(event.key.toLowerCase()) {
-                        case 'h':
-                            this.toggleShortcuts();
-                            break;
-                        case '+':
-                        case '=':
-                            event.preventDefault();
-                            this.zoomIn();
-                            break;
-                        case '-':
-                            event.preventDefault();
-                            this.zoomOut();
-                            break;
-                        case '0':
-                            event.preventDefault();
-                            this.resetZoom();
-                            break;
-                        case 'r':
-                            if (event.ctrlKey || event.metaKey) {
-                                return; // Allow browser refresh
-                            }
-                            event.preventDefault();
-                            this.resetVisualization();
-                            break;
-                        case 'd':
-                            event.preventDefault();
-                            this.loadDemo();
-                            break;
-                        case 'escape':
-                            this.closeAssetControls();
-                            d3.select('#violationDetails').remove();
-                            break;
-                        case 'z':
-                            if (event.ctrlKey || event.metaKey) {
-                                event.preventDefault();
-                                if (event.shiftKey) {
-                                    this.redo();
-                                } else {
-                                    this.undo();
-                                }
-                            }
-                            break;
-                    }
-                });
-
-                // Window resize handler
-                window.addEventListener('resize', () => {
-                    this.width = window.innerWidth - 380;
-                    this.height = window.innerHeight;
-                    this.svg.attr('width', this.width).attr('height', this.height);
-                    
-                    // Close asset controls on resize to prevent positioning issues
-                    this.closeAssetControls();
-                });
-
-                // Show shortcuts on first load
-                setTimeout(() => {
-                    this.showMessage('Press H to see keyboard shortcuts', 'success');
-                }, 2000);
-            }
-
-            // Toggle shortcuts display
-            toggleShortcuts() {
-                const shortcuts = document.getElementById('shortcuts');
-                shortcuts.classList.toggle('show');
-                
-                // Auto-hide after 8 seconds when showing
-                if (shortcuts.classList.contains('show')) {
-                    setTimeout(() => {
-                        shortcuts.classList.remove('show');
-                    }, 8000);
-                }
-            }
-
-            // Hide shortcuts display
-            hideShortcuts() {
-                const shortcuts = document.getElementById('shortcuts');
-                shortcuts.classList.remove('show');
+                this.updateVisualization();
             }
         }
-
+        
         // Global instance
         let visualizer;
-
-        // Global functions for onclick handlers (needed for backward compatibility)
-        function addNewDataStore() {
-            visualizer.addNewDataStore();
-        }
-
-        function addNewGroup() {
-            visualizer.addNewGroup();
-        }
-
-        function addPresetGroup(type) {
-            visualizer.addPresetGroup(type);
-        }
-
-        function addDataMovement(type) {
-            visualizer.addDataMovement(type);
-        }
-
-        function loadDemo() {
-            visualizer.loadDemo();
-        }
-
-        function resetVisualization() {
-            visualizer.resetVisualization();
-        }
-
-        function exportConfiguration() {
-            visualizer.exportConfiguration();
-        }
-
-        function importConfiguration(event) {
-            visualizer.importConfiguration(event);
-        }
-
-        function separateAsset() {
-            visualizer.separateAsset();
-        }
-
-        function deleteSelectedAsset() {
-            visualizer.deleteSelectedAsset();
-        }
-
-        function updateSelectedAsset(property, value) {
-            visualizer.updateSelectedAsset(property, value);
-        }
-
-        function closeAssetControls() {
-            visualizer.closeAssetControls();
-        }
-
-        function toggleAssetAccess(assetId, groupId, isChecked) {
-            visualizer.toggleAssetAccess(assetId, groupId, isChecked);
-        }
-
-        function zoomIn() {
-            visualizer.zoomIn();
-        }
-
-        function zoomOut() {
-            visualizer.zoomOut();
-        }
-
-        function resetZoom() {
-            visualizer.resetZoom();
-        }
-
-        function hideShortcuts() {
-            visualizer.hideShortcuts();
-        }
-
-        // Initialize the application when DOM is loaded
+        
+        // Global functions for onclick handlers
+        function addNewDataStore() { visualizer.addNewDataStore(); }
+        function addNewGroup() { visualizer.addNewGroup(); }
+        function addPresetGroup(type) { visualizer.addPresetGroup(type); }
+        function addDataMovement(type) { visualizer.addDataMovement(type); }
+        function loadDemo() { visualizer.loadDemo(); }
+        function resetVisualization() { visualizer.resetVisualization(); }
+        function exportConfiguration() { visualizer.exportConfiguration(); }
+        function importConfiguration(event) { visualizer.importConfiguration(event); }
+        function separateAsset() { visualizer.separateAsset(); }
+        function deleteSelectedAsset() { visualizer.deleteSelectedAsset(); }
+        function updateSelectedAsset(property, value) { visualizer.updateSelectedAsset(property, value); }
+        function closeAssetControls() { visualizer.closeAssetControls(); }
+        function toggleAssetAccess(assetId, groupId, isChecked) { visualizer.toggleAssetAccess(assetId, groupId, isChecked); }
+        function zoomIn() { visualizer.zoomIn(); }
+        function zoomOut() { visualizer.zoomOut(); }
+        function resetZoom() { visualizer.resetZoom(); }
+        
+        // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             visualizer = new PolpVisualizer();
+            
+            // Global click handler
+            document.addEventListener('click', (event) => {
+                if (!event.target.closest('.asset-controls') && !event.target.closest('.asset')) {
+                    visualizer.closeAssetControls();
+                }
+            });
+            
+            // Window resize handler
+            window.addEventListener('resize', () => {
+                visualizer.width = window.innerWidth - 380;
+                visualizer.height = window.innerHeight;
+                visualizer.svg.attr('width', visualizer.width).attr('height', visualizer.height);
+                visualizer.closeAssetControls();
+            });
         });
-
-        // Fallback initialization if DOMContentLoaded already fired
-        if (document.readyState === 'loading') {
-            // DOM is still loading
-        } else {
-            // DOM is already loaded
-            visualizer = new PolpVisualizer();
-        }
     </script>
 </body>
 </html>
