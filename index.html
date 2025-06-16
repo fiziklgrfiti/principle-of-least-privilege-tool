@@ -387,14 +387,39 @@
 
         .tooltip {
             position: absolute;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             color: white;
-            padding: 8px;
-            border-radius: 4px;
+            padding: 10px;
+            border-radius: 6px;
             font-size: 12px;
             pointer-events: none;
             z-index: 1000;
             display: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            max-width: 250px;
+        }
+
+        .tooltip-header {
+            font-weight: bold;
+            color: #00d4aa;
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 3px;
+        }
+
+        .tooltip-content {
+            line-height: 1.4;
+        }
+
+        .tooltip-hint {
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-style: italic;
+            color: #bdc3c7;
+            font-size: 11px;
         }
 
         .error-message {
@@ -1323,9 +1348,61 @@
                 }, 15000);
             }
             
+            // Store tooltip system
+            showStoreTooltip(store, event) {
+                const tooltip = document.getElementById('tooltip');
+                const storeAssets = Array.from(store.assetIds).map(id => this.assets.get(id)).filter(Boolean);
+                
+                // Build tooltip content
+                let content = `<div class="tooltip-header">📦 ${store.label}</div>`;
+                content += `<div class="tooltip-content">`;
+                content += `<strong>Classification:</strong> ${this.classificationIcons[store.classification]} ${store.classification.toUpperCase()}<br>`;
+                content += `<strong>Assets:</strong> ${storeAssets.length}<br>`;
+                
+                if (storeAssets.length > 0) {
+                    content += `<strong>Contains:</strong><br>`;
+                    storeAssets.slice(0, 3).forEach(asset => {
+                        content += `• ${asset.label}<br>`;
+                    });
+                    if (storeAssets.length > 3) {
+                        content += `• ... and ${storeAssets.length - 3} more`;
+                    }
+                }
+                
+                content += `</div>`;
+                content += `<div class="tooltip-hint">💡 Right-click to edit store details</div>`;
+                
+                tooltip.innerHTML = content;
+                
+                // Position tooltip
+                const rect = event.target.getBoundingClientRect();
+                const tooltipWidth = 250;
+                const tooltipHeight = 120;
+                
+                let left = event.pageX + 15;
+                let top = event.pageY - 10;
+                
+                // Keep tooltip within viewport
+                if (left + tooltipWidth > window.innerWidth) {
+                    left = event.pageX - tooltipWidth - 15;
+                }
+                if (top + tooltipHeight > window.innerHeight) {
+                    top = event.pageY - tooltipHeight - 10;
+                }
+                
+                tooltip.style.left = Math.max(10, left) + 'px';
+                tooltip.style.top = Math.max(10, top) + 'px';
+                tooltip.style.display = 'block';
+            }
+            
             closeViolationPopup() {
                 const popup = document.getElementById('violationPopup');
                 popup.style.display = 'none';
+            }
+            
+            hideStoreTooltip() {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
             }
             validateDataIntegrity() {
                 const issues = [];
@@ -2124,6 +2201,12 @@
                         event.preventDefault();
                         this.showStoreControls(d.id, event);
                     })
+                    .on('mouseover', (event, d) => {
+                        this.showStoreTooltip(d, event);
+                    })
+                    .on('mouseout', () => {
+                        this.hideStoreTooltip();
+                    })
                     .call(this.createDragBehavior('store'));
                 
                 // Store labels
@@ -2674,7 +2757,10 @@
                 const config = {
                     version: '1.0',
                     timestamp: new Date().toISOString(),
-                    stores: Array.from(this.stores.values()),
+                    stores: Array.from(this.stores.values()).map(store => ({
+                        ...store,
+                        assetIds: Array.from(store.assetIds) // Convert Set to Array properly
+                    })),
                     assets: Array.from(this.assets.values()).map(asset => ({
                         ...asset,
                         accessGroups: Array.from(asset.accessGroups)
@@ -2711,25 +2797,60 @@
                     try {
                         const config = JSON.parse(e.target.result);
                         
+                        // Validate configuration structure
+                        if (!config.stores || !config.assets || !config.groups) {
+                            throw new Error('Invalid configuration file format - missing required sections');
+                        }
+                        
+                        console.log('Importing configuration:', config);
+                        
+                        this.saveState('Import configuration');
+                        
                         // Clear existing data
                         this.stores.clear();
                         this.assets.clear();
                         this.groups.clear();
                         this.links.clear();
                         
-                        // Import stores
+                        // Import stores with proper assetIds handling
                         if (config.stores) {
                             config.stores.forEach(store => {
-                                store.assetIds = new Set(store.assetIds || []);
-                                this.stores.set(store.id, store);
+                                // Handle both old format (Set serialized as {}) and new format (Array)
+                                let assetIds = store.assetIds;
+                                if (typeof assetIds === 'object' && !Array.isArray(assetIds)) {
+                                    // Old format - assetIds was serialized as an object
+                                    assetIds = Object.keys(assetIds).length > 0 ? Object.keys(assetIds) : [];
+                                } else if (!Array.isArray(assetIds)) {
+                                    // Fallback - ensure it's an array
+                                    assetIds = [];
+                                }
+                                
+                                const restoredStore = { 
+                                    ...store, 
+                                    assetIds: new Set(assetIds)
+                                };
+                                
+                                // Clean up drag state properties
+                                delete restoredStore.isDragging;
+                                
+                                this.stores.set(store.id, restoredStore);
+                                console.log(`Imported store ${store.id} with ${assetIds.length} assets`);
                             });
                         }
                         
                         // Import assets
                         if (config.assets) {
                             config.assets.forEach(asset => {
-                                asset.accessGroups = new Set(asset.accessGroups || []);
-                                this.assets.set(asset.id, asset);
+                                const restoredAsset = { 
+                                    ...asset, 
+                                    accessGroups: new Set(asset.accessGroups || [])
+                                };
+                                
+                                // Clean up drag state properties
+                                delete restoredAsset.isDragging;
+                                
+                                this.assets.set(asset.id, restoredAsset);
+                                console.log(`Imported asset ${asset.id} in store ${asset.storeId}`);
                             });
                         }
                         
@@ -2737,6 +2858,7 @@
                         if (config.groups) {
                             config.groups.forEach(group => {
                                 this.groups.set(group.id, group);
+                                console.log(`Imported group ${group.id}: ${group.name}`);
                             });
                         }
                         
@@ -2744,6 +2866,7 @@
                         if (config.links) {
                             config.links.forEach(link => {
                                 this.links.set(link.id, link);
+                                console.log(`Imported link ${link.id}`);
                             });
                         }
                         
@@ -2755,16 +2878,31 @@
                             this.nextLinkId = config.counters.nextLinkId || 1;
                         }
                         
+                        // Validate data integrity after import
+                        this.validateDataIntegrity();
+                        
+                        // Update UI
                         this.renderAccessGroups();
                         this.updateVisualization();
+                        
+                        console.log('Import completed successfully');
+                        console.log('Final state:', {
+                            stores: this.stores.size,
+                            assets: this.assets.size,
+                            groups: this.groups.size,
+                            links: this.links.size
+                        });
+                        
                         this.showMessage('Configuration imported successfully', 'success');
                         
                     } catch (error) {
+                        console.error('Import error:', error);
                         this.showMessage(`Import failed: ${error.message}`, 'error');
                     }
                 };
                 reader.readAsText(file);
                 
+                // Reset file input
                 event.target.value = '';
             }
             
