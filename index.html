@@ -109,17 +109,6 @@
             color: #fff;
         }
 
-        .classification-section {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            border: 2px solid #f39c12;
-        }
-
-        .classification-section h3,
-        .classification-section label,
-        .classification-section select {
-            color: #ecf0f1;
-        }
-
         .form-group {
             margin-bottom: 12px;
         }
@@ -131,7 +120,7 @@
             font-size: 0.85em;
         }
 
-        select, input[type="range"] {
+        select, input[type="text"] {
             width: 100%;
             padding: 6px;
             background: rgba(255, 255, 255, 0.1);
@@ -257,6 +246,15 @@
             font-size: 0.85em;
         }
 
+        .critical-warning {
+            background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 8px;
+            animation: pulse 1s infinite;
+            font-size: 0.85em;
+        }
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -306,25 +304,97 @@
             text-anchor: middle;
             pointer-events: none;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
-        .group-label {
-            fill: white;
-            font-size: 9px;
-            text-anchor: middle;
+        .asset {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .asset:hover {
+            stroke-width: 4px;
+            filter: brightness(1.2);
+        }
+
+        .store {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .store:hover {
+            stroke-width: 4px;
+            filter: brightness(1.2);
+        }
+
+        .asset-controls {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 250px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .asset-controls h4 {
+            color: #00d4aa;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .checkbox-group {
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .close-controls {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .violation-indicator {
+            position: absolute;
             pointer-events: none;
+            z-index: 999;
         }
 
-        .management-stress {
-            stroke: #ff9500;
-            stroke-width: 1;
-            stroke-dasharray: 5,5;
-            opacity: 0.6;
-            animation: dash 2s linear infinite;
-        }
-
-        @keyframes dash {
-            to { stroke-dashoffset: -10; }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
         }
     </style>
 </head>
@@ -334,41 +404,52 @@
             <h1>🛡️ PoLP Visualizer</h1>
             
             <div class="section metrics">
-                <h3>📊 Management Complexity</h3>
+                <h3>📊 PoLP Compliance Metrics</h3>
                 <div class="metric-item">
                     <span>Total People with Access:</span>
                     <span id="totalPeople" class="metric-value">0</span>
                 </div>
                 <div class="metric-item">
-                    <span>Active Access Groups:</span>
-                    <span id="activeGroups" class="metric-value">0</span>
+                    <span>Data Classification Violations:</span>
+                    <span id="classificationViolations" class="metric-value">0</span>
                 </div>
                 <div class="metric-item">
-                    <span>Data Copies:</span>
+                    <span>Mixed Classification Stores:</span>
+                    <span id="mixedStores" class="metric-value">0</span>
+                </div>
+                <div class="metric-item">
+                    <span>Data Asset Copies:</span>
                     <span id="dataCopies" class="metric-value">1</span>
                 </div>
                 <div class="metric-item">
-                    <span>Management Overhead:</span>
-                    <span id="managementOverhead" class="metric-value">LOW</span>
-                </div>
-                <div class="metric-item">
-                    <span>Breach Impact Radius:</span>
-                    <span id="breachRadius" class="metric-value">0</span>
+                    <span>Management Complexity:</span>
+                    <span id="managementComplexity" class="metric-value">LOW</span>
                 </div>
                 <div id="warningMessage"></div>
             </div>
 
-            <div class="section classification-section">
-                <h3>🔒 Data Classification</h3>
+            <div class="section">
+                <h3>🗄️ Data Stores</h3>
+                <button class="add-group-btn" onclick="addNewDataStore()">+ Add Data Store</button>
+                
                 <div class="form-group">
-                    <label>Classification Level:</label>
-                    <select id="dataClassification">
-                        <option value="confidential" selected>🔐 Confidential (Default)</option>
-                        <option value="restricted">🚫 Restricted (High Security)</option>
+                    <label>Store Classification Level:</label>
+                    <select id="newStoreClassification">
+                        <option value="unclassified">📋 Unclassified (Public)</option>
                         <option value="internal">🏢 Internal Only</option>
-                        <option value="unclassified">📋 Unclassified</option>
+                        <option value="confidential" selected>🔐 Confidential</option>
+                        <option value="restricted">🚫 Restricted</option>
                     </select>
                 </div>
+                
+                <div class="form-group">
+                    <label>Store Name:</label>
+                    <input type="text" id="newStoreName" placeholder="e.g., HR Database, Dev Environment">
+                </div>
+                
+                <p style="font-size: 0.8em; color: #ccc; margin-bottom: 15px;">
+                    💡 Tip: Drag assets between stores. Ctrl+drag to separate asset into new store.
+                </p>
             </div>
 
             <div class="section">
@@ -376,11 +457,10 @@
                 <button class="add-group-btn" onclick="addNewGroup()">+ Add Access Group</button>
                 
                 <div class="preset-buttons">
-                    <button class="preset-btn" onclick="addPresetGroup('executive')">👔 Executive</button>
-                    <button class="preset-btn" onclick="addPresetGroup('development')">💻 Dev Team</button>
-                    <button class="preset-btn" onclick="addPresetGroup('employees')">🏢 All Staff</button>
-                    <button class="preset-btn" onclick="addPresetGroup('partners')">🤝 Partners</button>
-                    <button class="preset-btn" onclick="addPresetGroup('audit')">📋 Audit</button>
+                    <button class="preset-btn" onclick="addPresetGroup('executives')">👔 Executives</button>
+                    <button class="preset-btn" onclick="addPresetGroup('allstaff')">🏢 All Staff</button>
+                    <button class="preset-btn" onclick="addPresetGroup('itteam')">💻 IT Team</button>
+                    <button class="preset-btn" onclick="addPresetGroup('contractors')">🤝 Contractors</button>
                 </div>
 
                 <div id="accessGroups" class="access-groups">
@@ -389,16 +469,21 @@
             </div>
 
             <div class="section">
-                <h3>📤 Data Movement</h3>
+                <h3>📤 Data Movement Operations</h3>
+                <p style="font-size: 0.8em; color: #ccc; margin-bottom: 10px;">
+                    Simulate common data operations that can lead to PoLP violations:
+                </p>
                 <div class="movement-buttons">
-                    <button onclick="addDataMovement('backup')">📦 Backup</button>
-                    <button onclick="addDataMovement('sharing')">🤝 Share</button>
-                    <button onclick="addDataMovement('analytics')">📈 Analytics</button>
-                    <button onclick="addDataMovement('development')">💻 Dev/Test</button>
-                    <button onclick="addDataMovement('cloud')">☁️ Cloud</button>
-                    <button onclick="addDataMovement('partner')">🔗 Partner</button>
+                    <button onclick="addDataMovement('backup')">📦 Create Backup</button>
+                    <button onclick="addDataMovement('sharing')">🤝 Share with Team</button>
+                    <button onclick="addDataMovement('analytics')">📈 Analytics Copy</button>
+                    <button onclick="addDataMovement('development')">💻 Dev/Test Copy</button>
+                    <button onclick="addDataMovement('cloud')">☁️ Cloud Migration</button>
+                    <button onclick="addDataMovement('partner')">🔗 Partner Access</button>
                 </div>
             </div>
+
+            <button class="add-group-btn" onclick="loadDemo()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); margin-bottom: 10px;">🎯 Load PoLP Demo Scenario</button>
 
             <button class="reset-btn" onclick="resetVisualization()">🔄 Reset to Single Asset</button>
         </div>
@@ -409,137 +494,76 @@
                 <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
                 <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">⌂</button>
             </div>
+            
+            <div id="assetControls" class="asset-controls">
+                <button class="close-controls" onclick="closeAssetControls()">×</button>
+                <h4 id="assetControlsTitle">Asset Configuration</h4>
+                
+                <div class="form-group">
+                    <label>Asset Name:</label>
+                    <input type="text" id="assetName" onchange="updateSelectedAsset('label', this.value)">
+                </div>
+                
+                <div class="form-group">
+                    <label>Classification:</label>
+                    <select id="assetClassification" onchange="updateSelectedAsset('classification', this.value)">
+                        <option value="unclassified">📋 Unclassified</option>
+                        <option value="internal">🏢 Internal</option>
+                        <option value="confidential">🔐 Confidential</option>
+                        <option value="restricted">🚫 Restricted</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Access Groups:</label>
+                    <div id="assetAccessGroups" class="checkbox-group">
+                        <!-- Checkboxes will be populated here -->
+                    </div>
+                </div>
+                
+                <button onclick="separateAsset()" style="background: #f39c12; width: 100%; margin-bottom: 5px;">📤 Separate to New Store</button>
+                <button onclick="deleteSelectedAsset()" style="background: #ff4757; width: 100%;">🗑️ Delete Asset</button>
+            </div>
+            
+            <div id="tooltip" class="tooltip"></div>
             <svg id="networkSvg"></svg>
+            
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background: #00d4aa;"></div>
-                    <span>Original Data Asset</span>
+                    <div class="legend-color" style="background: #2ecc71;"></div>
+                    <span>📋 Unclassified</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: #667eea;"></div>
-                    <span>Data Copy</span>
+                    <div class="legend-color" style="background: #3498db;"></div>
+                    <span>🏢 Internal</span>
                 </div>
                 <div class="legend-item">
-                    <div style="width: 16px; height: 3px; background: #ff9500; margin-right: 8px;"></div>
-                    <span>Management Stress</span>
+                    <div class="legend-color" style="background: #f39c12;"></div>
+                    <span>🔐 Confidential</span>
                 </div>
                 <div class="legend-item">
-                    <span style="margin-left: 24px;">🔐 = Confidential</span>
+                    <div class="legend-color" style="background: #e74c3c;"></div>
+                    <span>🚫 Restricted</span>
                 </div>
-                <div class="legend-item">
-                    <span style="margin-left: 24px;">🚫 = Restricted</span>
+                <div style="margin-top: 10px; font-size: 0.8em;">
+                    <div>⚠️ = PoLP Violation</div>
+                    <div>🔥 = Critical Risk</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Global state
-        let nodes = [
-            { 
-                id: 'original', 
-                type: 'original', 
-                label: 'Original Data Asset', 
-                x: 400, 
-                y: 300,
-                accessGroups: [],
-                classification: 'confidential'
-            }
-        ];
-        let links = [];
+        // Global state - Clean data model
+        let dataStores = [];
+        let dataAssets = [];
         let accessGroups = [];
-        let nodeCounter = 1;
+        let links = [];
+        
+        let storeCounter = 1;
+        let assetCounter = 1;
         let groupCounter = 1;
-
-        // Group color palette
-        const groupColors = [
-            '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', 
-            '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
-            '#ffa8b5', '#ff3838', '#2ed573', '#70a1ff', '#5352ed'
-        ];
-
-        // Access level configurations
-        const accessLevels = {
-            individual: { people: 1, complexity: 1 },
-            team: { people: 4, complexity: 2 },
-            department: { people: 15, complexity: 4 },
-            company: { people: 100, complexity: 8 },
-            external: { people: 5, complexity: 6 }
-        };
-
-        const permissionLevels = {
-            read: { risk: 1, complexity: 1 },
-            edit: { risk: 3, complexity: 2 },
-            admin: { risk: 6, complexity: 4 }
-        };
-
-        const locationLevels = {
-            office: { risk: 1, complexity: 1 },
-            vpn: { risk: 2, complexity: 2 },
-            anywhere: { risk: 4, complexity: 3 }
-        };
-
-        const durationLevels = {
-            temporary: { risk: 1, complexity: 2 },
-            project: { risk: 2, complexity: 3 },
-            permanent: { risk: 3, complexity: 1 }
-        };
-
-        const classificationMultipliers = {
-            unclassified: 0.5,
-            internal: 1,
-            confidential: 2,
-            restricted: 4
-        };
-
-        // Preset group configurations
-        const presetGroups = {
-            executive: {
-                name: 'Executive Team',
-                access: 'team',
-                permission: 'admin',
-                location: 'anywhere',
-                duration: 'permanent'
-            },
-            development: {
-                name: 'Development Team',
-                access: 'team',
-                permission: 'admin',
-                location: 'vpn',
-                duration: 'project'
-            },
-            employees: {
-                name: 'All Employees',
-                access: 'company',
-                permission: 'read',
-                location: 'office',
-                duration: 'permanent'
-            },
-            partners: {
-                name: 'External Partners',
-                access: 'external',
-                permission: 'read',
-                location: 'anywhere',
-                duration: 'temporary'
-            },
-            audit: {
-                name: 'Audit Team',
-                access: 'team',
-                permission: 'read',
-                location: 'vpn',
-                duration: 'temporary'
-            }
-        };
-
-        // Movement type configurations
-        const movementTypes = {
-            backup: { label: 'Backup Copy', risk: 1.2, color: '#667eea' },
-            sharing: { label: 'Shared Copy', risk: 1.5, color: '#764ba2' },
-            analytics: { label: 'Analytics Copy', risk: 1.3, color: '#f093fb' },
-            development: { label: 'Dev/Test Copy', risk: 2.0, color: '#f5576c' },
-            cloud: { label: 'Cloud Copy', risk: 1.8, color: '#4facfe' },
-            partner: { label: 'Partner Copy', risk: 2.5, color: '#ff6b6b' }
-        };
+        let selectedAssetId = null;
 
         // D3 setup
         const svg = d3.select('#networkSvg');
@@ -548,30 +572,154 @@
         
         svg.attr('width', width).attr('height', height);
 
-        // Add zoom behavior
-        let currentZoom = 1;
+        // Zoom behavior
         const zoom = d3.zoom()
             .scaleExtent([0.1, 4])
             .on('zoom', (event) => {
-                currentZoom = event.transform.k;
                 g.attr('transform', event.transform);
             });
 
         svg.call(zoom);
-
-        // Main group for all visualization elements
         const g = svg.append('g');
 
-        // Create force simulation
-        const simulation = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id(d => d.id).distance(120))
-            .force('charge', d3.forceManyBody().strength(-400))
-            .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collision', d3.forceCollide().radius(40));
+        // Color schemes
+        const groupColors = [
+            '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', 
+            '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43'
+        ];
 
-        // Event listeners
-        document.getElementById('dataClassification').addEventListener('change', updateVisualization);
+        const classificationColors = {
+            unclassified: '#2ecc71',
+            internal: '#3498db', 
+            confidential: '#f39c12',
+            restricted: '#e74c3c'
+        };
 
+        const classificationIcons = {
+            unclassified: '📋',
+            internal: '🏢',
+            confidential: '🔐',
+            restricted: '🚫'
+        };
+
+        // Access level configurations for metrics
+        const accessLevels = {
+            individual: { people: 1, complexity: 1 },
+            team: { people: 8, complexity: 2 },
+            department: { people: 25, complexity: 4 },
+            company: { people: 150, complexity: 8 },
+            external: { people: 10, complexity: 6 }
+        };
+
+        // Preset group configurations
+        const presetGroups = {
+            executives: {
+                name: 'Executive Team',
+                access: 'team',
+                permission: 'admin',
+                location: 'anywhere',
+                duration: 'permanent'
+            },
+            allstaff: {
+                name: 'All Staff',
+                access: 'company',
+                permission: 'read',
+                location: 'office',
+                duration: 'permanent'
+            },
+            itteam: {
+                name: 'IT Team',
+                access: 'team',
+                permission: 'admin',
+                location: 'office',
+                duration: 'permanent'
+            },
+            contractors: {
+                name: 'External Contractors',
+                access: 'external',
+                permission: 'read',
+                location: 'vpn',
+                duration: 'temporary'
+            }
+        };
+
+        // Movement type configurations
+        const movementTypes = {
+            backup: { label: 'Backup Copy', classification: 'confidential', groups: ['itteam'] },
+            sharing: { label: 'Shared Copy', classification: 'internal', groups: ['allstaff'] },
+            analytics: { label: 'Analytics Copy', classification: 'internal', groups: ['analytics'] },
+            development: { label: 'Dev Copy', classification: 'unclassified', groups: ['developers'] },
+            cloud: { label: 'Cloud Copy', classification: 'confidential', groups: ['itteam'] },
+            partner: { label: 'Partner Copy', classification: 'internal', groups: ['external'] }
+        };
+
+        // Initialize with basic setup
+        function initialize() {
+            // Create initial store and asset
+            const initialStore = {
+                id: 'store_1',
+                label: 'Primary Data Store',
+                classification: 'confidential',
+                x: width / 2,
+                y: height / 2,
+                assets: ['asset_1']
+            };
+
+            const initialAsset = {
+                id: 'asset_1',
+                label: 'Sensitive Customer Data',
+                classification: 'confidential',
+                storeId: 'store_1',
+                accessGroups: [],
+                x: width / 2,
+                y: height / 2
+            };
+
+            dataStores = [initialStore];
+            dataAssets = [initialAsset];
+            accessGroups = [];
+            links = [];
+
+            updateVisualization();
+        }
+
+        // Data store management
+        function addNewDataStore() {
+            const classification = document.getElementById('newStoreClassification').value;
+            const name = document.getElementById('newStoreName').value || `${classification.charAt(0).toUpperCase() + classification.slice(1)} Store`;
+            
+            const storeId = `store_${storeCounter++}`;
+            const assetId = `asset_${assetCounter++}`;
+            
+            const newStore = {
+                id: storeId,
+                label: name,
+                classification: classification,
+                x: Math.random() * (width * 0.6) + (width * 0.2),
+                y: Math.random() * (height * 0.6) + (height * 0.2),
+                assets: [assetId]
+            };
+            
+            const newAsset = {
+                id: assetId,
+                label: 'Data Asset',
+                classification: classification,
+                storeId: storeId,
+                accessGroups: [],
+                x: newStore.x,
+                y: newStore.y
+            };
+            
+            dataStores.push(newStore);
+            dataAssets.push(newAsset);
+            
+            // Clear the name field
+            document.getElementById('newStoreName').value = '';
+            
+            updateVisualization();
+        }
+
+        // Access group management
         function addNewGroup() {
             const groupId = `group_${groupCounter++}`;
             const group = {
@@ -609,12 +757,22 @@
 
         function deleteGroup(groupId) {
             accessGroups = accessGroups.filter(g => g.id !== groupId);
-            // Remove group from all nodes
-            nodes.forEach(node => {
-                node.accessGroups = node.accessGroups.filter(g => g !== groupId);
+            
+            // Remove group from all assets
+            dataAssets.forEach(asset => {
+                asset.accessGroups = asset.accessGroups.filter(g => g !== groupId);
             });
+            
             renderAccessGroups();
             updateVisualization();
+        }
+
+        function updateGroupProperty(groupId, property, value) {
+            const group = accessGroups.find(g => g.id === groupId);
+            if (group) {
+                group[property] = value;
+                updateVisualization();
+            }
         }
 
         function renderAccessGroups() {
@@ -635,24 +793,24 @@
                     <div class="group-controls">
                         <select onchange="updateGroupProperty('${group.id}', 'access', this.value)">
                             <option value="individual" ${group.access === 'individual' ? 'selected' : ''}>Individual</option>
-                            <option value="team" ${group.access === 'team' ? 'selected' : ''}>Small Team</option>
+                            <option value="team" ${group.access === 'team' ? 'selected' : ''}>Team</option>
                             <option value="department" ${group.access === 'department' ? 'selected' : ''}>Department</option>
                             <option value="company" ${group.access === 'company' ? 'selected' : ''}>Company</option>
                             <option value="external" ${group.access === 'external' ? 'selected' : ''}>External</option>
                         </select>
                         <select onchange="updateGroupProperty('${group.id}', 'permission', this.value)">
-                            <option value="read" ${group.permission === 'read' ? 'selected' : ''}>Read Only</option>
+                            <option value="read" ${group.permission === 'read' ? 'selected' : ''}>Read</option>
                             <option value="edit" ${group.permission === 'edit' ? 'selected' : ''}>Edit</option>
-                            <option value="admin" ${group.permission === 'admin' ? 'selected' : ''}>Full Control</option>
+                            <option value="admin" ${group.permission === 'admin' ? 'selected' : ''}>Admin</option>
                         </select>
                         <select onchange="updateGroupProperty('${group.id}', 'location', this.value)">
-                            <option value="office" ${group.location === 'office' ? 'selected' : ''}>Office Only</option>
-                            <option value="vpn" ${group.location === 'vpn' ? 'selected' : ''}>Office + VPN</option>
+                            <option value="office" ${group.location === 'office' ? 'selected' : ''}>Office</option>
+                            <option value="vpn" ${group.location === 'vpn' ? 'selected' : ''}>VPN</option>
                             <option value="anywhere" ${group.location === 'anywhere' ? 'selected' : ''}>Anywhere</option>
                         </select>
                         <select onchange="updateGroupProperty('${group.id}', 'duration', this.value)">
                             <option value="temporary" ${group.duration === 'temporary' ? 'selected' : ''}>Temporary</option>
-                            <option value="project" ${group.duration === 'project' ? 'selected' : ''}>Project-Based</option>
+                            <option value="project" ${group.duration === 'project' ? 'selected' : ''}>Project</option>
                             <option value="permanent" ${group.duration === 'permanent' ? 'selected' : ''}>Permanent</option>
                         </select>
                     </div>
@@ -661,388 +819,1174 @@
             });
         }
 
-        function updateGroupProperty(groupId, property, value) {
-            const group = accessGroups.find(g => g.id === groupId);
-            if (group) {
-                group[property] = value;
-                updateVisualization();
-            }
-        }
-
-        function calculateNodeMetrics(node) {
-            let totalPeople = 0;
-            let totalRisk = 0;
-            let totalComplexity = 0;
-
-            const classification = document.getElementById('dataClassification').value;
-            const classMultiplier = classificationMultipliers[classification];
-
-            node.accessGroups.forEach(groupId => {
-                const group = accessGroups.find(g => g.id === groupId);
-                if (group) {
-                    const people = accessLevels[group.access].people;
-                    const risk = accessLevels[group.access].complexity * 
-                                permissionLevels[group.permission].risk * 
-                                locationLevels[group.location].risk * 
-                                durationLevels[group.duration].risk * 
-                                classMultiplier;
-                    
-                    const complexity = accessLevels[group.access].complexity + 
-                                     permissionLevels[group.permission].complexity + 
-                                     locationLevels[group.location].complexity + 
-                                     durationLevels[group.duration].complexity;
-
-                    totalPeople += people;
-                    totalRisk += risk;
-                    totalComplexity += complexity;
-                }
-            });
-
-            return { people: totalPeople, risk: totalRisk, complexity: totalComplexity };
-        }
-
-        function updateMetrics() {
-            let totalPeople = 0;
-            let totalComplexity = 0;
-            let maxNodePeople = 0;
-
-            nodes.forEach(node => {
-                const metrics = calculateNodeMetrics(node);
-                totalPeople += metrics.people;
-                totalComplexity += metrics.complexity;
-                maxNodePeople = Math.max(maxNodePeople, metrics.people);
-                node.calculatedMetrics = metrics;
-            });
-
-            const managementOverhead = totalComplexity > 50 ? 'CRITICAL' : 
-                                     totalComplexity > 25 ? 'HIGH' : 
-                                     totalComplexity > 10 ? 'MEDIUM' : 'LOW';
-
-            document.getElementById('totalPeople').textContent = totalPeople;
-            document.getElementById('activeGroups').textContent = accessGroups.length;
-            document.getElementById('dataCopies').textContent = nodes.length;
-            document.getElementById('managementOverhead').textContent = managementOverhead;
-            document.getElementById('breachRadius').textContent = maxNodePeople;
-
-            // Warning messages
-            let warningMessage = '';
-            if (totalComplexity > 50) {
-                warningMessage = '<div class="warning">⚠️ CRITICAL: Management overhead is extremely high! Consider compartmentalizing access by data classification.</div>';
-            } else if (totalComplexity > 25) {
-                warningMessage = '<div class="warning">⚠️ HIGH COMPLEXITY: Too many access groups to manage effectively. Apply Principle of Least Privilege!</div>';
-            } else if (accessGroups.length > 5) {
-                warningMessage = '<div class="warning">💡 TIP: Consider consolidating similar access groups to reduce management burden.</div>';
-            }
-
-            document.getElementById('warningMessage').innerHTML = warningMessage;
-        }
-
+        // Data movement operations
         function addDataMovement(type) {
-            const newNodeId = `${type}_${nodeCounter++}`;
             const config = movementTypes[type];
+            const sourceAsset = dataAssets[0]; // Use first asset as source
             
-            const newNode = {
-                id: newNodeId,
-                type: 'copy',
-                movementType: type,
-                label: config.label,
-                risk: config.risk,
-                color: config.color,
-                x: Math.random() * width,
-                y: Math.random() * height,
-                accessGroups: [...nodes[0].accessGroups], // Inherit from original
-                classification: document.getElementById('dataClassification').value
+            const storeId = `store_${storeCounter++}`;
+            const assetId = `asset_${assetCounter++}`;
+            
+            // Create new store for the copy
+            const newStore = {
+                id: storeId,
+                label: `${config.label} Store`,
+                classification: config.classification,
+                x: Math.random() * (width * 0.6) + (width * 0.2),
+                y: Math.random() * (height * 0.6) + (height * 0.2),
+                assets: [assetId]
             };
-
-            nodes.push(newNode);
             
-            // Create link to original asset
+            // Create new asset copy
+            const newAsset = {
+                id: assetId,
+                label: config.label,
+                classification: config.classification,
+                storeId: storeId,
+                accessGroups: [...sourceAsset.accessGroups], // Inherit access groups
+                x: newStore.x,
+                y: newStore.y
+            };
+            
+            dataStores.push(newStore);
+            dataAssets.push(newAsset);
+            
+            // Create link showing data relationship
             links.push({
-                source: 'original',
-                target: newNodeId,
-                risk: config.risk
+                source: sourceAsset.id,
+                target: assetId,
+                type: 'copy'
+            });
+            
+            updateVisualization();
+        }
+
+        // Asset management
+        function showAssetControls(assetId, event) {
+            selectedAssetId = assetId;
+            const asset = dataAssets.find(a => a.id === assetId);
+            if (!asset) return;
+
+            const controls = document.getElementById('assetControls');
+            const title = document.getElementById('assetControlsTitle');
+            const nameInput = document.getElementById('assetName');
+            const classificationSelect = document.getElementById('assetClassification');
+            const accessGroupsDiv = document.getElementById('assetAccessGroups');
+
+            title.textContent = `${asset.label} Configuration`;
+            nameInput.value = asset.label;
+            classificationSelect.value = asset.classification;
+
+            // Clear and populate access groups
+            accessGroupsDiv.innerHTML = '';
+            accessGroups.forEach(group => {
+                const isChecked = asset.accessGroups.includes(group.id);
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'checkbox-item';
+                checkboxDiv.innerHTML = `
+                    <input type="checkbox" id="checkbox_${group.id}" ${isChecked ? 'checked' : ''} 
+                           onchange="toggleAssetAccess('${assetId}', '${group.id}', this.checked)">
+                    <label for="checkbox_${group.id}" style="color: ${group.color};">${group.name}</label>
+                `;
+                accessGroupsDiv.appendChild(checkboxDiv);
             });
 
-            // Update simulation
-            simulation.nodes(nodes);
-            simulation.force('link').links(links);
-            simulation.alpha(1).restart();
+            // Position controls
+            controls.style.left = Math.min(event.pageX + 10, window.innerWidth - 280) + 'px';
+            controls.style.top = Math.min(event.pageY + 10, window.innerHeight - 300) + 'px';
+            controls.style.display = 'block';
+        }
+
+        function closeAssetControls() {
+            document.getElementById('assetControls').style.display = 'none';
+            selectedAssetId = null;
+        }
+
+        function updateSelectedAsset(property, value) {
+            if (!selectedAssetId) return;
+            
+            const asset = dataAssets.find(a => a.id === selectedAssetId);
+            if (!asset) return;
+            
+            asset[property] = value;
+            updateVisualization();
+        }
+
+        function toggleAssetAccess(assetId, groupId, isChecked) {
+            const asset = dataAssets.find(a => a.id === assetId);
+            if (!asset) return;
+
+            if (isChecked) {
+                if (!asset.accessGroups.includes(groupId)) {
+                    asset.accessGroups.push(groupId);
+                }
+            } else {
+                asset.accessGroups = asset.accessGroups.filter(g => g !== groupId);
+            }
 
             updateVisualization();
         }
 
-        function updateVisualization() {
-            updateMetrics();
-            drawNetwork();
-        }
-
-        function drawNetwork() {
-            g.selectAll('*').remove();
-
-            // Create gradient definitions
-            const defs = svg.select('defs').empty() ? svg.append('defs') : svg.select('defs');
-            defs.selectAll('*').remove();
-
-            // Management stress lines (behind everything)
-            if (accessGroups.length > 3) {
-                const stressLines = g.append('g')
-                    .attr('class', 'stress-lines');
-            }
-
-            // Draw group halos for each access group
-            const haloGroups = g.append('g').attr('class', 'halo-groups');
+        function separateAsset() {
+            if (!selectedAssetId) return;
             
-            accessGroups.forEach(group => {
-                const groupNodes = nodes.filter(n => n.accessGroups.includes(group.id));
-                if (groupNodes.length > 0) {
-                    haloGroups.selectAll(`.halo-${group.id}`)
-                        .data(groupNodes)
-                        .enter().append('circle')
-                        .attr('class', `halo-${group.id}`)
-                        .attr('r', d => {
-                            const metrics = d.calculatedMetrics || { complexity: 0 };
-                            return Math.max(50, metrics.complexity * 8);
-                        })
-                        .attr('fill', group.color)
-                        .attr('opacity', 0.15)
-                        .attr('pointer-events', 'none');
+            const asset = dataAssets.find(a => a.id === selectedAssetId);
+            if (!asset) return;
+            
+            const currentStore = dataStores.find(s => s.id === asset.storeId);
+            if (!currentStore || currentStore.assets.length <= 1) {
+                alert('Cannot separate the only asset from a store. Delete the asset instead.');
+                return;
+            }
+            
+            // Remove asset from current store
+            currentStore.assets = currentStore.assets.filter(a => a !== selectedAssetId);
+            
+            // Create new store for this asset
+            const newStoreId = `store_${storeCounter++}`;
+            const newStore = {
+                id: newStoreId,
+                label: `${asset.label} Store`,
+                classification: asset.classification,
+                x: asset.x + 100,
+                y: asset.y + 100,
+                assets: [selectedAssetId]
+            };
+            
+            // Update asset's store reference
+            asset.storeId = newStoreId;
+            asset.x = newStore.x;
+            asset.y = newStore.y;
+            
+            dataStores.push(newStore);
+            closeAssetControls();
+            updateVisualization();
+        }
+
+        function deleteSelectedAsset() {
+            if (!selectedAssetId) return;
+            
+            const asset = dataAssets.find(a => a.id === selectedAssetId);
+            if (!asset) return;
+            
+            const store = dataStores.find(s => s.id === asset.storeId);
+            
+            // Remove asset from store
+            if (store) {
+                store.assets = store.assets.filter(a => a !== selectedAssetId);
+                
+                // If store is now empty, remove it
+                if (store.assets.length === 0) {
+                    dataStores = dataStores.filter(s => s.id !== asset.storeId);
                 }
-            });
-
-            // Draw links
-            const link = g.append('g')
-                .attr('class', 'links-layer')
-                .selectAll('line')
-                .data(links)
-                .enter().append('line')
-                .attr('class', 'link')
-                .attr('stroke', '#74b9ff')
-                .attr('stroke-opacity', 0.8)
-                .attr('stroke-width', d => Math.max(2, d.risk * 3));
-
-            // Draw nodes
-            const node = g.append('g')
-                .attr('class', 'nodes-layer')
-                .selectAll('circle')
-                .data(nodes)
-                .enter().append('circle')
-                .attr('class', 'node')
-                .attr('r', d => d.type === 'original' ? 32 : 26)
-                .attr('fill', d => {
-                    if (d.type === 'original') return '#00d4aa';
-                    return d.color || '#667eea';
-                })
-                .attr('stroke', '#ffffff')
-                .attr('stroke-width', 3)
-                .style('filter', d => {
-                    const metrics = d.calculatedMetrics || { complexity: 0 };
-                    if (metrics.complexity > 20) return 'drop-shadow(0 0 12px #ff4757)';
-                    if (metrics.complexity > 10) return 'drop-shadow(0 0 8px #ffa502)';
-                    return 'drop-shadow(0 0 5px rgba(255,255,255,0.3))';
-                })
-                .call(d3.drag()
-                    .on('start', dragstarted)
-                    .on('drag', dragged)
-                    .on('end', dragended));
-
-            // Add classification symbols
-            const symbols = g.append('g')
-                .attr('class', 'symbols-layer')
-                .selectAll('text')
-                .data(nodes)
-                .enter().append('text')
-                .attr('class', 'classification-symbol')
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '16px')
-                .attr('dy', 5)
-                .text(d => {
-                    const classification = d.classification || 'confidential';
-                    switch(classification) {
-                        case 'restricted': return '🚫';
-                        case 'confidential': return '🔐';
-                        case 'internal': return '🏢';
-                        case 'unclassified': return '📋';
-                        default: return '🔐';
-                    }
-                });
-
-            // Add node labels
-            const labels = g.append('g')
-                .attr('class', 'labels-layer')
-                .selectAll('text')
-                .data(nodes)
-                .enter().append('text')
-                .attr('class', 'node-label')
-                .attr('dy', d => d.type === 'original' ? 45 : 40)
-                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
-                .text(d => d.label);
-
-            // Add group labels for nodes with access groups
-            const groupLabels = g.append('g')
-                .attr('class', 'group-labels-layer')
-                .selectAll('text')
-                .data(nodes.filter(n => n.accessGroups && n.accessGroups.length > 0))
-                .enter().append('text')
-                .attr('class', 'group-label')
-                .attr('dy', d => d.type === 'original' ? 60 : 55)
-                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
-                .text(d => {
-                    const groupNames = d.accessGroups.map(groupId => {
-                        const group = accessGroups.find(g => g.id === groupId);
-                        return group ? group.name.split(' ')[0] : '';
-                    }).join(', ');
-                    return groupNames.length > 20 ? groupNames.substring(0, 17) + '...' : groupNames;
-                });
-
-            // Update positions on simulation tick
-            simulation.on('tick', () => {
-                link
-                    .attr('x1', d => d.source.x)
-                    .attr('y1', d => d.source.y)
-                    .attr('x2', d => d.target.x)
-                    .attr('y2', d => d.target.y);
-
-                node
-                    .attr('cx', d => d.x)
-                    .attr('cy', d => d.y);
-
-                symbols
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y);
-
-                labels
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y);
-
-                groupLabels
-                    .attr('x', d => d.x)
-                    .attr('y', d => d.y);
-
-                // Update all halos to match node positions
-                accessGroups.forEach(group => {
-                    g.selectAll(`.halo-${group.id}`)
-                        .attr('cx', d => d.x)
-                        .attr('cy', d => d.y);
-                });
-
-                // Update stress lines if they exist
-                g.selectAll('.management-stress')
-                    .attr('x1', d => d.x - 30)
-                    .attr('y1', d => d.y - 30)
-                    .attr('x2', d => d.x + 30)
-                    .attr('y2', d => d.y + 30);
-            });
+            }
+            
+            // Remove asset
+            dataAssets = dataAssets.filter(a => a.id !== selectedAssetId);
+            
+            // Remove associated links
+            links = links.filter(l => l.source !== selectedAssetId && l.target !== selectedAssetId);
+            
+            closeAssetControls();
+            updateVisualization();
         }
 
-        // Drag functions
-        function dragstarted(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-        }
-
-        function dragged(event, d) {
-            d.fx = event.x;
-            d.fy = event.y;
-        }
-
-        function dragended(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-        }
-
-        // Zoom control functions
-        function zoomIn() {
-            svg.transition().duration(300).call(
-                zoom.scaleBy, 1.5
-            );
-        }
-
-        function zoomOut() {
-            svg.transition().duration(300).call(
-                zoom.scaleBy, 1 / 1.5
-            );
-        }
-
-        function resetZoom() {
-            svg.transition().duration(500).call(
-                zoom.transform,
-                d3.zoomIdentity
-            );
-        }
-
-        function resetVisualization() {
-            nodes = [
-                { 
-                    id: 'original', 
-                    type: 'original', 
-                    label: 'Original Data Asset', 
-                    x: width/2, 
-                    y: height/2,
-                    accessGroups: [],
-                    classification: 'confidential'
-                }
-            ];
-            links = [];
+        // PoLP Demo scenario
+        function loadDemo() {
+            // Clear existing data
+            dataStores = [];
+            dataAssets = [];
             accessGroups = [];
-            nodeCounter = 1;
+            links = [];
+            storeCounter = 1;
+            assetCounter = 1;
             groupCounter = 1;
 
-            // Reset classification
-            document.getElementById('dataClassification').value = 'confidential';
+            // Create access groups that demonstrate PoLP issues
+            const groups = [
+                {
+                    id: 'group_executives',
+                    name: 'Executive Team',
+                    access: 'team',
+                    permission: 'admin',
+                    location: 'anywhere',
+                    duration: 'permanent',
+                    color: groupColors[0]
+                },
+                {
+                    id: 'group_allstaff',
+                    name: 'All Staff',
+                    access: 'company',
+                    permission: 'read',
+                    location: 'office',
+                    duration: 'permanent',
+                    color: groupColors[1]
+                },
+                {
+                    id: 'group_hr',
+                    name: 'HR Department',
+                    access: 'department',
+                    permission: 'edit',
+                    location: 'office',
+                    duration: 'permanent',
+                    color: groupColors[2]
+                },
+                {
+                    id: 'group_contractors',
+                    name: 'External Contractors',
+                    access: 'external',
+                    permission: 'read',
+                    location: 'anywhere',
+                    duration: 'temporary',
+                    color: groupColors[3]
+                },
+                {
+                    id: 'group_devs',
+                    name: 'Development Team',
+                    access: 'team',
+                    permission: 'admin',
+                    location: 'vpn',
+                    duration: 'project',
+                    color: groupColors[4]
+                }
+            ];
 
-            simulation.nodes(nodes);
-            simulation.force('link').links(links);
-            simulation.alpha(1).restart();
+            accessGroups = groups;
+
+            // Create problematic data stores that violate PoLP
+            
+            // Store 1: Mixed classification store (VIOLATION)
+            const mixedStore = {
+                id: 'store_mixed',
+                label: 'Legacy Mixed Database',
+                classification: 'internal',
+                x: 200,
+                y: 200,
+                assets: ['asset_payroll', 'asset_public']
+            };
+
+            // Restricted payroll data in internal store (VIOLATION)
+            const payrollAsset = {
+                id: 'asset_payroll',
+                label: 'Employee Payroll Data',
+                classification: 'restricted',
+                storeId: 'store_mixed',
+                accessGroups: ['group_hr', 'group_allstaff'], // Too broad access (VIOLATION)
+                x: 200,
+                y: 200
+            };
+
+            // Public data in same store
+            const publicAsset = {
+                id: 'asset_public',
+                label: 'Company Newsletter',
+                classification: 'unclassified',
+                storeId: 'store_mixed',
+                accessGroups: ['group_allstaff'],
+                x: 200,
+                y: 200
+            };
+
+            // Store 2: Development environment with production data (VIOLATION)
+            const devStore = {
+                id: 'store_dev',
+                label: 'Development Environment',
+                classification: 'unclassified',
+                x: 500,
+                y: 200,
+                assets: ['asset_customer_dev']
+            };
+
+            const customerDevAsset = {
+                id: 'asset_customer_dev',
+                label: 'Customer Data (Dev Copy)',
+                classification: 'confidential', // Sensitive data in unclassified store (VIOLATION)
+                storeId: 'store_dev',
+                accessGroups: ['group_devs', 'group_contractors'], // External access to confidential (VIOLATION)
+                x: 500,
+                y: 200
+            };
+
+            // Store 3: Backup with escalated access (VIOLATION)
+            const backupStore = {
+                id: 'store_backup',
+                label: 'Cloud Backup',
+                classification: 'confidential',
+                x: 350,
+                y: 400,
+                assets: ['asset_backup']
+            };
+
+            const backupAsset = {
+                id: 'asset_backup',
+                label: 'Full System Backup',
+                classification: 'restricted',
+                storeId: 'store_backup',
+                accessGroups: ['group_executives', 'group_allstaff', 'group_contractors'], // Over-privileged (VIOLATION)
+                x: 350,
+                y: 400
+            };
+
+            // Store 4: Properly secured store (COMPLIANT)
+            const secureStore = {
+                id: 'store_secure',
+                label: 'Secure HR Vault',
+                classification: 'restricted',
+                x: 650,
+                y: 350,
+                assets: ['asset_secure_hr']
+            };
+
+            const secureHRAsset = {
+                id: 'asset_secure_hr',
+                label: 'Secure Employee Records',
+                classification: 'restricted',
+                storeId: 'store_secure',
+                accessGroups: ['group_hr'], // Properly restricted
+                x: 650,
+                y: 350
+            };
+
+            dataStores = [mixedStore, devStore, backupStore, secureStore];
+            dataAssets = [payrollAsset, publicAsset, customerDevAsset, backupAsset, secureHRAsset];
+
+            // Create links showing problematic data flow
+            links = [
+                {
+                    source: 'asset_payroll',
+                    target: 'asset_customer_dev',
+                    type: 'copy'
+                },
+                {
+                    source: 'asset_payroll',
+                    target: 'asset_backup',
+                    type: 'copy'
+                }
+            ];
 
             renderAccessGroups();
             updateVisualization();
         }
 
-        // Handle window resize
+        // Metrics and violation detection
+        function calculateMetrics() {
+            let totalPeople = 0;
+            let classificationViolations = 0;
+            let mixedStores = 0;
+            let totalComplexity = 0;
+
+            // Calculate people with access
+            const uniqueGroups = new Set();
+            dataAssets.forEach(asset => {
+                asset.accessGroups.forEach(groupId => {
+                    uniqueGroups.add(groupId);
+                    const group = accessGroups.find(g => g.id === groupId);
+                    if (group) {
+                        totalPeople += accessLevels[group.access].people;
+                        totalComplexity += accessLevels[group.access].complexity;
+                    }
+                });
+            });
+
+            // Check for classification violations
+            dataStores.forEach(store => {
+                const storeAssets = dataAssets.filter(a => a.storeId === store.id);
+                const classifications = [...new Set(storeAssets.map(a => a.classification))];
+                
+                // Mixed classification store
+                if (classifications.length > 1) {
+                    mixedStores++;
+                }
+                
+                // Assets with higher classification than store
+                storeAssets.forEach(asset => {
+                    if (getClassificationLevel(asset.classification) > getClassificationLevel(store.classification)) {
+                        classificationViolations++;
+                    }
+                });
+            });
+
+            // Check for access violations
+            dataAssets.forEach(asset => {
+                asset.accessGroups.forEach(groupId => {
+                    const group = accessGroups.find(g => g.id === groupId);
+                    if (group) {
+                        // External access to confidential/restricted data
+                        if (group.access === 'external' && 
+                            (asset.classification === 'confidential' || asset.classification === 'restricted')) {
+                            classificationViolations++;
+                        }
+                        
+                        // Company-wide access to restricted data
+                        if (group.access === 'company' && asset.classification === 'restricted') {
+                            classificationViolations++;
+                        }
+                    }
+                });
+            });
+
+            const complexity = totalComplexity > 50 ? 'CRITICAL' : 
+                             totalComplexity > 25 ? 'HIGH' : 
+                             totalComplexity > 10 ? 'MEDIUM' : 'LOW';
+
+            return {
+                totalPeople,
+                classificationViolations,
+                mixedStores,
+                dataCopies: dataAssets.length,
+                complexity
+            };
+        }
+
+        function getClassificationLevel(classification) {
+            const levels = { unclassified: 0, internal: 1, confidential: 2, restricted: 3 };
+            return levels[classification] || 0;
+        }
+
+        function updateMetrics() {
+            const metrics = calculateMetrics();
+            
+            document.getElementById('totalPeople').textContent = metrics.totalPeople;
+            document.getElementById('classificationViolations').textContent = metrics.classificationViolations;
+            document.getElementById('mixedStores').textContent = metrics.mixedStores;
+            document.getElementById('dataCopies').textContent = metrics.dataCopies;
+            document.getElementById('managementComplexity').textContent = metrics.complexity;
+
+            // Generate warnings
+            let warningMessage = '';
+            if (metrics.classificationViolations > 0) {
+                warningMessage += `<div class="critical-warning">🔥 CRITICAL: ${metrics.classificationViolations} classification violation(s) detected!</div>`;
+            }
+            if (metrics.mixedStores > 0) {
+                warningMessage += `<div class="warning">⚠️ ${metrics.mixedStores} store(s) contain mixed classification data</div>`;
+            }
+            if (metrics.complexity === 'CRITICAL') {
+                warningMessage += '<div class="critical-warning">🚨 Management complexity is critical - immediate action required!</div>';
+            }
+
+            document.getElementById('warningMessage').innerHTML = warningMessage;
+        }
+
+        // Visualization
+        function updateVisualization() {
+            updateMetrics();
+            drawVisualization();
+        }
+
+        function drawVisualization() {
+            // Clear existing elements
+            g.selectAll('*').remove();
+
+            // Draw stores (rectangles)
+            const storeSelection = g.selectAll('.store')
+                .data(dataStores)
+                .enter().append('g')
+                .attr('class', 'store');
+
+            // Store rectangles
+            storeSelection.append('rect')
+                .attr('x', d => d.x - 60)
+                .attr('y', d => d.y - 40)
+                .attr('width', 120)
+                .attr('height', 80)
+                .attr('fill', d => {
+                    // Check for violations
+                    const storeAssets = dataAssets.filter(a => a.storeId === d.id);
+                    const hasViolation = storeAssets.some(asset => 
+                        getClassificationLevel(asset.classification) > getClassificationLevel(d.classification)
+                    );
+                    
+                    return hasViolation ? '#ff4757' : classificationColors[d.classification];
+                })
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', 2)
+                .attr('rx', 8)
+                .style('filter', 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))')
+                .style('cursor', 'move')
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', draggedStore)
+                    .on('end', dragEnded));
+
+            // Store labels
+            storeSelection.append('text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y - 50)
+                .attr('class', 'node-label')
+                .style('font-size', '12px')
+                .style('pointer-events', 'none')
+                .text(d => d.label);
+
+            // Store classification icons
+            storeSelection.append('text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 5)
+                .style('font-size', '24px')
+                .style('text-anchor', 'middle')
+                .style('pointer-events', 'none')
+                .text(d => classificationIcons[d.classification]);
+
+            // Draw assets (circles)
+            const assetSelection = g.selectAll('.asset')
+                .data(dataAssets)
+                .enter().append('g')
+                .attr('class', 'asset');
+
+            // Asset circles
+            assetSelection.append('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', 18)
+                .attr('fill', d => {
+                    const store = dataStores.find(s => s.id === d.storeId);
+                    const hasViolation = store && 
+                        (getClassificationLevel(d.classification) > getClassificationLevel(store.classification) ||
+                         d.accessGroups.some(groupId => {
+                             const group = accessGroups.find(g => g.id === groupId);
+                             return group && (
+                                 (group.access === 'external' && (d.classification === 'confidential' || d.classification === 'restricted')) ||
+                                 (group.access === 'company' && d.classification === 'restricted')
+                             );
+                         }));
+                    
+                    return hasViolation ? '#ff4757' : classificationColors[d.classification];
+                })
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', 3)
+                .style('filter', d => {
+                    const store = dataStores.find(s => s.id === d.storeId);
+                    const hasViolation = store && getClassificationLevel(d.classification) > getClassificationLevel(store.classification);
+                    return hasViolation ? 'drop-shadow(0 0 15px #ff4757)' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                })
+                .style('cursor', 'move')
+                .on('click', function(event, d) {
+                    event.stopPropagation();
+                    showAssetControls(d.id, event);
+                })
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', draggedAsset)
+                    .on('end', dragEnded));
+
+            // Asset labels
+            assetSelection.append('text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 35)
+                .attr('class', 'node-label')
+                .style('font-size', '10px')
+                .style('pointer-events', 'none')
+                .text(d => d.label);
+
+            // Asset classification icons
+            assetSelection.append('text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 3)
+                .style('font-size', '12px')
+                .style('text-anchor', 'middle')
+                .style('pointer-events', 'none')
+                .text(d => classificationIcons[d.classification]);
+
+            // Draw access group halos
+            accessGroups.forEach(group => {
+                const groupAssets = dataAssets.filter(a => a.accessGroups.includes(group.id));
+                if (groupAssets.length > 0) {
+                    g.selectAll(`.halo-${group.id}`)
+                        .data(groupAssets)
+                        .enter().append('circle')
+                        .attr('class', `halo-${group.id}`)
+                        .attr('cx', d => d.x)
+                        .attr('cy', d => d.y)
+                        .attr('r', 40)
+                        .attr('fill', group.color)
+                        .attr('opacity', 0.1)
+                        .attr('stroke', group.color)
+                        .attr('stroke-width', 1)
+                        .attr('stroke-opacity', 0.3)
+                        .style('pointer-events', 'none');
+                }
+            });
+
+            // Draw links
+            g.selectAll('.link')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('x1', d => {
+                    const source = dataAssets.find(a => a.id === d.source);
+                    return source ? source.x : 0;
+                })
+                .attr('y1', d => {
+                    const source = dataAssets.find(a => a.id === d.source);
+                    return source ? source.y : 0;
+                })
+                .attr('x2', d => {
+                    const target = dataAssets.find(a => a.id === d.target);
+                    return target ? target.x : 0;
+                })
+                .attr('y2', d => {
+                    const target = dataAssets.find(a => a.id === d.target);
+                    return target ? target.y : 0;
+                })
+                .attr('stroke', '#74b9ff')
+                .attr('stroke-width', 2)
+                .attr('stroke-opacity', 0.6)
+                .style('pointer-events', 'none');
+
+            // Add violation indicators - make them part of data-driven selection
+            const violationData = [];
+            dataAssets.forEach(asset => {
+                const store = dataStores.find(s => s.id === asset.storeId);
+                if (store) {
+                    const classificationViolation = getClassificationLevel(asset.classification) > getClassificationLevel(store.classification);
+                    
+                    if (classificationViolation) {
+                        violationData.push({
+                            id: `violation_${asset.id}`,
+                            x: asset.x + 25,
+                            y: asset.y - 20,
+                            type: 'classification',
+                            assetId: asset.id,
+                            storeId: store.id,
+                            assetName: asset.label,
+                            storeName: store.label,
+                            assetClassification: asset.classification,
+                            storeClassification: store.classification,
+                            description: `Classification Mismatch: "${asset.label}" (${asset.classification.toUpperCase()}) is stored in "${store.label}" (${store.classification.toUpperCase()}). Assets should not have higher classification than their storage location.`,
+                            severity: 'HIGH',
+                            recommendation: `Move this asset to a ${asset.classification} classified store, or downgrade the asset classification if appropriate.`
+                        });
+                    }
+                    
+                    // Check for access violations
+                    const accessViolations = [];
+                    asset.accessGroups.forEach(groupId => {
+                        const group = accessGroups.find(g => g.id === groupId);
+                        if (group) {
+                            if (group.access === 'external' && (asset.classification === 'confidential' || asset.classification === 'restricted')) {
+                                accessViolations.push({
+                                    groupName: group.name,
+                                    groupAccess: group.access,
+                                    issue: 'External users should not have access to confidential or restricted data'
+                                });
+                            }
+                            
+                            if (group.access === 'company' && asset.classification === 'restricted') {
+                                accessViolations.push({
+                                    groupName: group.name,
+                                    groupAccess: group.access,
+                                    issue: 'Company-wide access to restricted data violates need-to-know principle'
+                                });
+                            }
+                            
+                            if (group.location === 'anywhere' && asset.classification === 'restricted') {
+                                accessViolations.push({
+                                    groupName: group.name,
+                                    groupAccess: group.access,
+                                    issue: 'Restricted data should not be accessible from anywhere'
+                                });
+                            }
+                        }
+                    });
+                    
+                    if (accessViolations.length > 0) {
+                        violationData.push({
+                            id: `access_violation_${asset.id}`,
+                            x: asset.x - 25,
+                            y: asset.y - 20,
+                            type: 'access',
+                            assetId: asset.id,
+                            assetName: asset.label,
+                            assetClassification: asset.classification,
+                            violations: accessViolations,
+                            description: `Access Control Violation: "${asset.label}" (${asset.classification.toUpperCase()}) has inappropriate access permissions.`,
+                            severity: 'CRITICAL',
+                            recommendation: 'Review and restrict access groups to follow principle of least privilege.'
+                        });
+                    }
+                }
+            });
+
+            // Check for mixed classification stores
+            dataStores.forEach(store => {
+                const storeAssets = dataAssets.filter(a => a.storeId === store.id);
+                const classifications = [...new Set(storeAssets.map(a => a.classification))];
+                
+                if (classifications.length > 1) {
+                    const assetDetails = storeAssets.map(a => `"${a.label}" (${a.classification.toUpperCase()})`).join(', ');
+                    violationData.push({
+                        id: `mixed_${store.id}`,
+                        x: store.x + 70,
+                        y: store.y - 50,
+                        type: 'mixed',
+                        storeId: store.id,
+                        storeName: store.label,
+                        classifications: classifications,
+                        assets: assetDetails,
+                        description: `Mixed Classification Storage: "${store.label}" contains assets with different classification levels: ${classifications.map(c => c.toUpperCase()).join(', ')}.`,
+                        severity: 'CRITICAL',
+                        recommendation: 'Separate assets into stores matching their classification levels to maintain proper data compartmentalization.'
+                    });
+                }
+            });
+
+            // Draw violation indicators
+            g.selectAll('.violation-indicator')
+                .data(violationData, d => d.id)
+                .enter().append('text')
+                .attr('class', 'violation-indicator')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y)
+                .style('font-size', '16px')
+                .style('pointer-events', 'all')
+                .style('cursor', 'pointer')
+                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
+                .text(d => d.type === 'mixed' ? '🔥' : '⚠️')
+                .on('click', function(event, d) {
+                    event.stopPropagation();
+                    showViolationDetails(d, event);
+                });
+        }
+
+        // Drag handlers
+        function dragStarted(event, d) {
+            d.isDragging = true;
+            d.dragStartX = d.x;
+            d.dragStartY = d.y;
+            d.dragOffsetX = event.x - d.x;
+            d.dragOffsetY = event.y - d.y;
+        }
+
+        function draggedStore(event, d) {
+            // Apply offset correction to prevent jumping
+            d.x = event.x - d.dragOffsetX;
+            d.y = event.y - d.dragOffsetY;
+            
+            // Update associated assets to follow store
+            const storeAssets = dataAssets.filter(a => a.storeId === d.id);
+            storeAssets.forEach(asset => {
+                asset.x = d.x;
+                asset.y = d.y;
+            });
+            
+            // Update visualization without full redraw for performance
+            updatePositions();
+        }
+
+        function draggedAsset(event, d) {
+            // Apply offset correction to prevent jumping
+            d.x = event.x - d.dragOffsetX;
+            d.y = event.y - d.dragOffsetY;
+            
+            // Reset store highlights
+            g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
+            
+            // Check if dragging over another store and highlight it
+            const targetStore = dataStores.find(store => {
+                const dx = store.x - d.x;
+                const dy = store.y - d.y;
+                return Math.sqrt(dx * dx + dy * dy) < 80 && store.id !== d.storeId;
+            });
+            
+            // Visual feedback for potential drop
+            if (targetStore) {
+                g.selectAll('rect')
+                    .filter(storeData => storeData.id === targetStore.id)
+                    .attr('stroke', '#00d4aa')
+                    .attr('stroke-width', 4);
+            }
+            
+            // Update visualization without full redraw for performance
+            updatePositions();
+        }
+
+        function dragEnded(event, d) {
+            if (!d.isDragging) return;
+            d.isDragging = false;
+            
+            // Reset all store highlights
+            g.selectAll('rect').attr('stroke', '#ffffff').attr('stroke-width', 2);
+            
+            // Check if asset was dropped on a different store
+            if (d.storeId) { // This is an asset
+                const targetStore = dataStores.find(store => {
+                    const dx = store.x - d.x;
+                    const dy = store.y - d.y;
+                    return Math.sqrt(dx * dx + dy * dy) < 80 && store.id !== d.storeId;
+                });
+                
+                if (targetStore) {
+                    // Move asset to new store
+                    const oldStore = dataStores.find(s => s.id === d.storeId);
+                    if (oldStore) {
+                        oldStore.assets = oldStore.assets.filter(a => a !== d.id);
+                        
+                        // Remove empty store
+                        if (oldStore.assets.length === 0) {
+                            dataStores = dataStores.filter(s => s.id !== oldStore.id);
+                        }
+                    }
+                    
+                    // Add to new store
+                    targetStore.assets.push(d.id);
+                    d.storeId = targetStore.id;
+                    d.x = targetStore.x;
+                    d.y = targetStore.y;
+                    
+                    // Full redraw after successful drop
+                    updateVisualization();
+                } else {
+                    // Just update positions if no store transfer
+                    updatePositions();
+                }
+            } else {
+                // Store was dragged, just update positions
+                updatePositions();
+            }
+            
+            // Clean up drag properties
+            delete d.dragOffsetX;
+            delete d.dragOffsetY;
+            delete d.dragStartX;
+            delete d.dragStartY;
+        }
+
+        // Performance optimized position update during drag
+        function updatePositions() {
+            // Update store positions
+            g.selectAll('.store')
+                .select('rect')
+                .attr('x', d => d.x - 60)
+                .attr('y', d => d.y - 40);
+                
+            g.selectAll('.store')
+                .select('text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y - 50);
+                
+            g.selectAll('.store')
+                .selectAll('text:nth-child(3)')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 5);
+
+            // Update asset positions
+            g.selectAll('.asset')
+                .select('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+                
+            g.selectAll('.asset')
+                .selectAll('text')
+                .attr('x', d => d.x)
+                .attr('y', (d, i, nodes) => {
+                    // Different y positions for label vs icon
+                    return d3.select(nodes[i]).classed('node-label') ? d.y + 35 : d.y + 3;
+                });
+
+            // Update access group halos
+            accessGroups.forEach(group => {
+                g.selectAll(`.halo-${group.id}`)
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+            });
+
+            // Update links
+            g.selectAll('.link')
+                .attr('x1', d => {
+                    const source = dataAssets.find(a => a.id === d.source);
+                    return source ? source.x : 0;
+                })
+                .attr('y1', d => {
+                    const source = dataAssets.find(a => a.id === d.source);
+                    return source ? source.y : 0;
+                })
+                .attr('x2', d => {
+                    const target = dataAssets.find(a => a.id === d.target);
+                    return target ? target.x : 0;
+                })
+                .attr('y2', d => {
+                    const target = dataAssets.find(a => a.id === d.target);
+                    return target ? target.y : 0;
+                });
+
+            // Update violation indicators positions
+            updateViolationIndicators();
+        }
+
+        // Show detailed violation information
+        function showViolationDetails(violationData, event) {
+            // Remove any existing violation details popup
+            d3.select('#violationDetails').remove();
+            
+            // Create violation details popup
+            const popup = d3.select('body')
+                .append('div')
+                .attr('id', 'violationDetails')
+                .style('position', 'absolute')
+                .style('background', 'rgba(0, 0, 0, 0.95)')
+                .style('color', 'white')
+                .style('padding', '15px')
+                .style('border-radius', '8px')
+                .style('border', '2px solid #ff4757')
+                .style('font-size', '14px')
+                .style('max-width', '400px')
+                .style('z-index', '10000')
+                .style('box-shadow', '0 4px 12px rgba(0,0,0,0.5)')
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY + 10) + 'px');
+
+            // Add close button
+            popup.append('div')
+                .style('text-align', 'right')
+                .style('margin-bottom', '10px')
+                .append('button')
+                .style('background', 'none')
+                .style('border', 'none')
+                .style('color', 'white')
+                .style('font-size', '16px')
+                .style('cursor', 'pointer')
+                .text('×')
+                .on('click', () => d3.select('#violationDetails').remove());
+
+            // Add severity indicator
+            const severityColor = violationData.severity === 'CRITICAL' ? '#ff4757' : '#ffa502';
+            popup.append('div')
+                .style('color', severityColor)
+                .style('font-weight', 'bold')
+                .style('margin-bottom', '8px')
+                .html(`🚨 ${violationData.severity} VIOLATION`);
+
+            // Add main description
+            popup.append('div')
+                .style('margin-bottom', '12px')
+                .style('line-height', '1.4')
+                .text(violationData.description);
+
+            // Add specific violation details based on type
+            if (violationData.type === 'access' && violationData.violations) {
+                popup.append('div')
+                    .style('margin-bottom', '10px')
+                    .style('font-weight', 'bold')
+                    .text('Specific Issues:');
+                
+                violationData.violations.forEach(violation => {
+                    popup.append('div')
+                        .style('margin-left', '15px')
+                        .style('margin-bottom', '5px')
+                        .style('color', '#ffa502')
+                        .text(`• ${violation.groupName}: ${violation.issue}`);
+                });
+            }
+
+            if (violationData.type === 'mixed') {
+                popup.append('div')
+                    .style('margin-bottom', '10px')
+                    .style('font-weight', 'bold')
+                    .text('Assets in this store:');
+                
+                popup.append('div')
+                    .style('margin-left', '15px')
+                    .style('margin-bottom', '10px')
+                    .style('color', '#74b9ff')
+                    .text(violationData.assets);
+            }
+
+            // Add recommendation
+            popup.append('div')
+                .style('margin-top', '12px')
+                .style('padding-top', '12px')
+                .style('border-top', '1px solid rgba(255,255,255,0.3)')
+                .style('font-weight', 'bold')
+                .style('color', '#00d4aa')
+                .text('💡 Recommendation:');
+            
+            popup.append('div')
+                .style('margin-top', '5px')
+                .style('color', '#ecf0f1')
+                .style('line-height', '1.4')
+                .text(violationData.recommendation);
+
+            // Auto-close after 10 seconds
+            setTimeout(() => {
+                const popup = d3.select('#violationDetails');
+                if (!popup.empty()) {
+                    popup.remove();
+                }
+            }, 10000);
+        }
+
+        // Update violation indicators during drag operations
+        function updateViolationIndicators() {
+            // Recalculate violation data
+            const violationData = [];
+            dataAssets.forEach(asset => {
+                const store = dataStores.find(s => s.id === asset.storeId);
+                if (store) {
+                    const classificationViolation = getClassificationLevel(asset.classification) > getClassificationLevel(store.classification);
+                    
+                    if (classificationViolation) {
+                        violationData.push({
+                            id: `violation_${asset.id}`,
+                            x: asset.x + 25,
+                            y: asset.y - 20,
+                            type: 'classification',
+                            assetId: asset.id,
+                            storeId: store.id,
+                            assetName: asset.label,
+                            storeName: store.label,
+                            assetClassification: asset.classification,
+                            storeClassification: store.classification,
+                            description: `Classification Mismatch: "${asset.label}" (${asset.classification.toUpperCase()}) is stored in "${store.label}" (${store.classification.toUpperCase()}). Assets should not have higher classification than their storage location.`,
+                            severity: 'HIGH',
+                            recommendation: `Move this asset to a ${asset.classification} classified store, or downgrade the asset classification if appropriate.`
+                        });
+                    }
+                    
+                    // Check for access violations
+                    const accessViolations = [];
+                    asset.accessGroups.forEach(groupId => {
+                        const group = accessGroups.find(g => g.id === groupId);
+                        if (group) {
+                            if (group.access === 'external' && (asset.classification === 'confidential' || asset.classification === 'restricted')) {
+                                accessViolations.push({
+                                    groupName: group.name,
+                                    groupAccess: group.access,
+                                    issue: 'External users should not have access to confidential or restricted data'
+                                });
+                            }
+                            
+                            if (group.access === 'company' && asset.classification === 'restricted') {
+                                accessViolations.push({
+                                    groupName: group.name,
+                                    groupAccess: group.access,
+                                    issue: 'Company-wide access to restricted data violates need-to-know principle'
+                                });
+                            }
+                            
+                            if (group.location === 'anywhere' && asset.classification === 'restricted') {
+                                accessViolations.push({
+                                    groupName: group.name,
+                                    groupAccess: group.access,
+                                    issue: 'Restricted data should not be accessible from anywhere'
+                                });
+                            }
+                        }
+                    });
+                    
+                    if (accessViolations.length > 0) {
+                        violationData.push({
+                            id: `access_violation_${asset.id}`,
+                            x: asset.x - 25,
+                            y: asset.y - 20,
+                            type: 'access',
+                            assetId: asset.id,
+                            assetName: asset.label,
+                            assetClassification: asset.classification,
+                            violations: accessViolations,
+                            description: `Access Control Violation: "${asset.label}" (${asset.classification.toUpperCase()}) has inappropriate access permissions.`,
+                            severity: 'CRITICAL',
+                            recommendation: 'Review and restrict access groups to follow principle of least privilege.'
+                        });
+                    }
+                }
+            });
+
+            // Check for mixed classification stores
+            dataStores.forEach(store => {
+                const storeAssets = dataAssets.filter(a => a.storeId === store.id);
+                const classifications = [...new Set(storeAssets.map(a => a.classification))];
+                
+                if (classifications.length > 1) {
+                    const assetDetails = storeAssets.map(a => `"${a.label}" (${a.classification.toUpperCase()})`).join(', ');
+                    violationData.push({
+                        id: `mixed_${store.id}`,
+                        x: store.x + 70,
+                        y: store.y - 50,
+                        type: 'mixed',
+                        storeId: store.id,
+                        storeName: store.label,
+                        classifications: classifications,
+                        assets: assetDetails,
+                        description: `Mixed Classification Storage: "${store.label}" contains assets with different classification levels: ${classifications.map(c => c.toUpperCase()).join(', ')}.`,
+                        severity: 'CRITICAL',
+                        recommendation: 'Separate assets into stores matching their classification levels to maintain proper data compartmentalization.'
+                    });
+                }
+            });
+
+            // Update existing indicators and add/remove as needed
+            const violationSelection = g.selectAll('.violation-indicator')
+                .data(violationData, d => d.id);
+
+            // Remove indicators that are no longer needed
+            violationSelection.exit().remove();
+
+            // Add new indicators
+            violationSelection.enter()
+                .append('text')
+                .attr('class', 'violation-indicator')
+                .style('font-size', '16px')
+                .style('pointer-events', 'all')
+                .style('cursor', 'pointer')
+                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
+                .text(d => d.type === 'mixed' ? '🔥' : '⚠️')
+                .on('click', function(event, d) {
+                    event.stopPropagation();
+                    showViolationDetails(d, event);
+                });
+
+            // Update positions of all indicators
+            g.selectAll('.violation-indicator')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+        }
+
+        // Zoom controls
+        function zoomIn() {
+            svg.transition().duration(300).call(zoom.scaleBy, 1.5);
+        }
+
+        function zoomOut() {
+            svg.transition().duration(300).call(zoom.scaleBy, 1 / 1.5);
+        }
+
+        function resetZoom() {
+            svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+        }
+
+        // Reset function
+        function resetVisualization() {
+            dataStores = [];
+            dataAssets = [];
+            accessGroups = [];
+            links = [];
+            storeCounter = 1;
+            assetCounter = 1;
+            groupCounter = 1;
+            
+            closeAssetControls();
+            initialize();
+        }
+
+        // Event listeners
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.asset-controls') && !event.target.closest('.asset')) {
+                closeAssetControls();
+            }
+            
+            // Close violation details if clicking outside
+            if (!event.target.closest('#violationDetails') && !event.target.closest('.violation-indicator')) {
+                d3.select('#violationDetails').remove();
+            }
+        });
+
         window.addEventListener('resize', () => {
             const newWidth = window.innerWidth - 380;
             const newHeight = window.innerHeight;
             svg.attr('width', newWidth).attr('height', newHeight);
-            simulation.force('center', d3.forceCenter(newWidth / 2, newHeight / 2));
-            svg.call(zoom);
         });
 
-        // Add original data to first group when groups are created
-        function assignOriginalToGroup(groupId) {
-            if (!nodes[0].accessGroups.includes(groupId)) {
-                nodes[0].accessGroups.push(groupId);
-                updateVisualization();
-            }
-        }
-
-        // Override addPresetGroup to automatically assign to original
-        const originalAddPresetGroup = addPresetGroup;
-        addPresetGroup = function(presetType) {
-            const currentGroupCount = accessGroups.length;
-            originalAddPresetGroup(presetType);
-            if (accessGroups.length > currentGroupCount) {
-                const newGroup = accessGroups[accessGroups.length - 1];
-                assignOriginalToGroup(newGroup.id);
-            }
-        };
-
-        // Override addNewGroup to automatically assign to original
-        const originalAddNewGroup = addNewGroup;
-        addNewGroup = function() {
-            const currentGroupCount = accessGroups.length;
-            originalAddNewGroup();
-            if (accessGroups.length > currentGroupCount) {
-                const newGroup = accessGroups[accessGroups.length - 1];
-                assignOriginalToGroup(newGroup.id);
-            }
-        };
-
-        // Initialize
-        renderAccessGroups();
-        updateVisualization();
-        drawNetwork();
+        // Initialize the application
+        initialize();
     </script>
 </body>
 </html>
