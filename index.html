@@ -901,24 +901,45 @@
                 return { valid: true };
             }
 
-            // Calculate dynamic store size based on asset count
+            // Calculate dynamic store size based on asset count with very generous spacing
             getStoreSize(store) {
                 const assetCount = store.assets.length;
-                const baseWidth = 120;
-                const baseHeight = 80;
+                const baseWidth = 220;  // Even larger base width
+                const baseHeight = 160; // Even larger base height
                 
-                // Calculate additional space needed
+                if (assetCount <= 1) {
+                    // Single asset gets a comfortable minimum size
+                    return { width: baseWidth, height: baseHeight };
+                }
+                
+                // Calculate grid layout for multiple assets
                 const assetsPerRow = Math.ceil(Math.sqrt(assetCount));
                 const rows = Math.ceil(assetCount / assetsPerRow);
                 
-                // Dynamic sizing with padding
-                const width = Math.max(baseWidth, assetsPerRow * 50 + 40);
-                const height = Math.max(baseHeight, rows * 50 + 40);
+                // Asset circle radius is 18px, so we need at least 36px + very generous spacing
+                const assetDiameter = 36;
+                const assetSpacing = 100; // Much more spacing between asset centers (was 60)
+                const storePadding = 80; // Even more generous padding around the edge (was 60)
+                const labelSpace = 50; // More space for asset labels below (was 40)
+                
+                // Calculate required dimensions with very generous spacing
+                const contentWidth = Math.max(
+                    (assetsPerRow - 1) * (assetDiameter + assetSpacing) + assetDiameter,
+                    120 // Increased minimum content width
+                );
+                const contentHeight = Math.max(
+                    (rows - 1) * (assetDiameter + assetSpacing) + assetDiameter + labelSpace,
+                    100 // Increased minimum content height
+                );
+                
+                // Add very generous padding around content
+                const width = Math.max(baseWidth, contentWidth + (storePadding * 2));
+                const height = Math.max(baseHeight, contentHeight + (storePadding * 2));
                 
                 return { width, height };
             }
 
-            // Position assets within their store
+            // Position assets within their store with very generous spacing
             positionAssetsInStore(store) {
                 const storeAssets = this.dataAssets.filter(a => a.storeId === store.id);
                 const { width, height } = this.getStoreSize(store);
@@ -927,19 +948,31 @@
                     // Single asset stays centered
                     storeAssets[0].x = store.x;
                     storeAssets[0].y = store.y;
-                } else {
-                    // Multiple assets arranged in grid
+                } else if (storeAssets.length > 1) {
+                    // Multiple assets arranged in grid with very generous spacing
                     const assetsPerRow = Math.ceil(Math.sqrt(storeAssets.length));
-                    const assetSpacing = Math.min(40, (width - 40) / assetsPerRow);
-                    const startX = store.x - (width / 2) + 30;
-                    const startY = store.y - (height / 2) + 30;
+                    const rows = Math.ceil(storeAssets.length / assetsPerRow);
+                    
+                    const assetDiameter = 36;
+                    const assetSpacing = 100; // Much more generous spacing (was 60)
+                    const storePadding = 80; // Much more generous padding (was 60)
+                    const labelSpace = 25; // Space reserved for labels below assets
+                    
+                    // Calculate the actual content area (excluding padding)
+                    const contentWidth = (assetsPerRow - 1) * (assetDiameter + assetSpacing) + assetDiameter;
+                    const contentHeight = (rows - 1) * (assetDiameter + assetSpacing) + assetDiameter;
+                    
+                    // Starting position (top-left of content area)
+                    const startX = store.x - (contentWidth / 2);
+                    const startY = store.y - (contentHeight / 2) - (labelSpace / 2);
                     
                     storeAssets.forEach((asset, index) => {
                         const row = Math.floor(index / assetsPerRow);
                         const col = index % assetsPerRow;
                         
-                        asset.x = startX + col * assetSpacing;
-                        asset.y = startY + row * assetSpacing;
+                        // Calculate position with very generous spacing
+                        asset.x = startX + col * (assetDiameter + assetSpacing) + (assetDiameter / 2);
+                        asset.y = startY + row * (assetDiameter + assetSpacing) + (assetDiameter / 2);
                     });
                 }
             }
@@ -1087,7 +1120,30 @@
             updateGroupProperty(groupId, property, value) {
                 const group = this.accessGroups.find(g => g.id === groupId);
                 if (group) {
-                    group[property] = value;
+                    // Validate group name if that's what's being updated
+                    if (property === 'name') {
+                        if (!value || value.trim().length === 0) {
+                            this.showMessage('Group name cannot be empty', 'error');
+                            // Revert to previous name
+                            this.renderAccessGroups();
+                            return;
+                        }
+                        
+                        const trimmedValue = value.trim();
+                        
+                        // Check for duplicate names (excluding current group)
+                        if (this.accessGroups.some(g => g.id !== groupId && g.name.toLowerCase() === trimmedValue.toLowerCase())) {
+                            this.showMessage('A group with this name already exists', 'error');
+                            this.renderAccessGroups();
+                            return;
+                        }
+                        
+                        group[property] = trimmedValue;
+                        this.showMessage(`Group renamed to "${trimmedValue}"`, 'success');
+                    } else {
+                        group[property] = value;
+                    }
+                    
                     this.updateVisualization();
                 }
             }
@@ -1103,7 +1159,12 @@
                         <div class="group-header">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div class="group-color" style="background-color: ${group.color};"></div>
-                                <span class="group-name">${group.name}</span>
+                                <input type="text" value="${group.name}" 
+                                       onchange="visualizer.updateGroupProperty('${group.id}', 'name', this.value)"
+                                       style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); 
+                                              border-radius: 3px; padding: 2px 6px; color: #fff; font-size: 0.85em; 
+                                              font-weight: bold; width: 140px;"
+                                       placeholder="Group name">
                             </div>
                             <button class="delete-group" onclick="visualizer.deleteGroup('${group.id}')" title="Delete group">×</button>
                         </div>
@@ -1915,7 +1976,7 @@
                 
                 // Boundary checking to prevent dragging outside visible area
                 const { width: storeWidth, height: storeHeight } = this.getStoreSize(d);
-                const margin = 50;
+                const margin = Math.max(50, storeWidth / 2, storeHeight / 2); // Dynamic margin based on store size
                 
                 d.x = Math.max(storeWidth/2 + margin, Math.min(this.width - storeWidth/2 - margin, newX));
                 d.y = Math.max(storeHeight/2 + margin, Math.min(this.height - storeHeight/2 - margin, newY));
