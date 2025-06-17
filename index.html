@@ -1327,20 +1327,54 @@
                 content.innerHTML = violation.description;
                 recommendation.innerHTML = `<strong>💡 Recommendation:</strong><br>${violation.recommendation}`;
                 
-                // Position popup
-                const rect = event.target.getBoundingClientRect();
-                const popupWidth = 400;
-                const popupHeight = 200;
-                
-                let left = Math.min(event.pageX + 10, window.innerWidth - popupWidth - 20);
-                let top = Math.min(event.pageY + 10, window.innerHeight - popupHeight - 20);
-                
-                left = Math.max(20, left);
-                top = Math.max(20, top);
-                
-                popup.style.left = left + 'px';
-                popup.style.top = top + 'px';
-                popup.style.display = 'block';
+                // CORRECTED POSITIONING: Apply the same fix as other popups
+                const violationElement = event.target;
+                if (violationElement && violationElement.getBoundingClientRect) {
+                    const elementRect = violationElement.getBoundingClientRect();
+                    
+                    // Apply the same offset correction
+                    const offsetCorrection = 347; // Same correction used for other popups
+                    
+                    let left = elementRect.right + 15 - offsetCorrection;
+                    let top = elementRect.top - 10;
+                    
+                    // Keep popup within viewport bounds
+                    const popupWidth = 400;
+                    const popupHeight = 200;
+                    
+                    if (left + popupWidth > window.innerWidth) {
+                        left = elementRect.left - popupWidth - 15 - offsetCorrection;
+                    }
+                    if (top + popupHeight > window.innerHeight) {
+                        top = elementRect.bottom + 10;
+                    }
+                    if (top < 20) {
+                        top = 20;
+                    }
+                    
+                    // Ensure minimum distance from edges and control panel
+                    left = Math.max(400, Math.min(left, window.innerWidth - popupWidth - 20)); // 400 to clear the control panel
+                    top = Math.max(20, Math.min(top, window.innerHeight - popupHeight - 20));
+                    
+                    popup.style.left = left + 'px';
+                    popup.style.top = top + 'px';
+                    popup.style.display = 'block';
+                    
+                    console.log('VIOLATION POPUP CORRECTED - Element x:', elementRect.x, 'Corrected left:', left, 'Final position:', left, top);
+                } else {
+                    // Fallback positioning using the original event coordinates with correction
+                    let left = Math.min(event.pageX + 10, window.innerWidth - 400 - 20) - offsetCorrection;
+                    let top = Math.min(event.pageY + 10, window.innerHeight - 200 - 20);
+                    
+                    left = Math.max(400, left); // Ensure it clears the control panel
+                    top = Math.max(20, top);
+                    
+                    popup.style.left = left + 'px';
+                    popup.style.top = top + 'px';
+                    popup.style.display = 'block';
+                    
+                    console.log('VIOLATION POPUP FALLBACK positioning used');
+                }
                 
                 // Auto-close after 15 seconds
                 setTimeout(() => {
@@ -1497,7 +1531,7 @@
                     assets[0].y = store.y;
                 } else {
                     const assetsPerRow = Math.ceil(Math.sqrt(assets.length));
-                    const spacing = 80;
+                    const spacing = 120;
                     const startX = store.x - ((assetsPerRow - 1) * spacing) / 2;
                     const startY = store.y - (Math.ceil(assets.length / assetsPerRow - 1) * spacing) / 2;
                     
@@ -1521,7 +1555,7 @@
                 
                 const assetsPerRow = Math.ceil(Math.sqrt(assetCount));
                 const rows = Math.ceil(assetCount / assetsPerRow);
-                const spacing = 80;
+                const spacing = 120;
                 const padding = 60;
                 
                 const width = Math.max(baseWidth, assetsPerRow * spacing + padding);
@@ -2304,7 +2338,7 @@
                         return d.y - height / 2 - 10;
                     })
                     .attr('class', 'node-label')
-                    .style('font-size', '12px')
+                    .style('font-size', '16px')
                     .text(d => d.label);
                 
                 // Store icons
@@ -2371,7 +2405,7 @@
                 assetSelection.append('circle')
                     .attr('cx', d => d.x)
                     .attr('cy', d => d.y)
-                    .attr('r', 18)
+                    .attr('r', 32)
                     .attr('fill', d => {
                         const store = this.stores.get(d.storeId);
                         const hasViolation = store && 
@@ -2391,9 +2425,9 @@
                 // Asset labels
                 assetSelection.append('text')
                     .attr('x', d => d.x)
-                    .attr('y', d => d.y + 35)
+                    .attr('y', d => d.y + 55)
                     .attr('class', 'node-label')
-                    .style('font-size', '10px')
+                    .style('font-size', '14px')
                     .text(d => d.label);
                 
                 // Asset icons
@@ -2484,7 +2518,7 @@
                                 id: `access_${asset.id}_${groupId}`,
                                 type: 'access',
                                 severity: group.access === 'world' ? 'CRITICAL' : 'HIGH',
-                                x: asset.x - 25, // Always relative to current asset position
+                                x: asset.x - 45, // Always relative to current asset position
                                 y: asset.y - 20,
                                 description: violationDescription,
                                 recommendation: recommendation
@@ -2702,7 +2736,7 @@
                 this.g.selectAll('.asset')
                     .select('text.node-label')
                     .attr('x', d => d.x)
-                    .attr('y', d => d.y + 35);
+                    .attr('y', d => d.y + 55);
                 
                 this.g.selectAll('.asset')
                     .select('text:not(.node-label)')
