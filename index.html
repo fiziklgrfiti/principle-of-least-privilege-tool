@@ -1374,27 +1374,47 @@
                 
                 tooltip.innerHTML = content;
                 
-                // Position tooltip
-                const rect = event.target.getBoundingClientRect();
-                const tooltipWidth = 250;
-                const tooltipHeight = 120;
-                
-                let left = event.pageX + 15;
-                let top = event.pageY - 10;
-                
-                // Keep tooltip within viewport
-                if (left + tooltipWidth > window.innerWidth) {
-                    left = event.pageX - tooltipWidth - 15;
+                // CORRECTED: Subtract the offset that's causing the displacement
+                const storeElement = event.target.closest('g.store') || event.target;
+                if (storeElement && storeElement.getBoundingClientRect) {
+                    const elementRect = storeElement.getBoundingClientRect();
+                    
+                    // The element reports x=1037 but visually appears around x=690
+                    // So we need to subtract about 347px (1037-690) from the calculated position
+                    const offsetCorrection = 347; // Difference between reported and visual position
+                    
+                    let left = elementRect.right + 15 - offsetCorrection;  // Subtract the displacement
+                    let top = elementRect.top - 10;
+                    
+                    // Keep tooltip within viewport bounds
+                    const tooltipWidth = 250;
+                    const tooltipHeight = 120;
+                    
+                    if (left + tooltipWidth > window.innerWidth) {
+                        left = elementRect.left - tooltipWidth - 15 - offsetCorrection;
+                    }
+                    if (top + tooltipHeight > window.innerHeight) {
+                        top = elementRect.bottom + 10;
+                    }
+                    
+                    // Ensure minimum distances from edges
+                    left = Math.max(10, left);
+                    top = Math.max(10, top);
+                    
+                    tooltip.style.left = left + 'px';
+                    tooltip.style.top = top + 'px';
+                    tooltip.style.display = 'block';
+                    
+                    console.log('CORRECTED - Element x:', elementRect.x, 'Corrected left:', left, 'Final position:', left, top);
+                } else {
+                    // Fallback
+                    tooltip.style.left = '500px';
+                    tooltip.style.top = '300px';
+                    tooltip.style.display = 'block';
+                    console.log('FALLBACK positioning used');
                 }
-                if (top + tooltipHeight > window.innerHeight) {
-                    top = event.pageY - tooltipHeight - 10;
-                }
-                
-                tooltip.style.left = Math.max(10, left) + 'px';
-                tooltip.style.top = Math.max(10, top) + 'px';
-                tooltip.style.display = 'block';
             }
-            
+                        
             closeViolationPopup() {
                 const popup = document.getElementById('violationPopup');
                 popup.style.display = 'none';
@@ -1735,16 +1755,49 @@
                     });
                 }
                 
-                // Position controls
-                const rect = event.target.getBoundingClientRect();
-                const left = Math.min(event.pageX + 10, window.innerWidth - 300);
-                const top = Math.min(event.pageY + 10, window.innerHeight - 400);
-                
-                controls.style.left = Math.max(20, left) + 'px';
-                controls.style.top = Math.max(20, top) + 'px';
-                controls.style.display = 'block';
+                // CORRECTED POSITIONING: Apply the same fix as the tooltip
+                const storeElement = event.target.closest('g.store') || event.target;
+                if (storeElement && storeElement.getBoundingClientRect) {
+                    const elementRect = storeElement.getBoundingClientRect();
+                    
+                    // Apply the same offset correction as the tooltip
+                    const offsetCorrection = 347; // Same correction used for tooltip
+                    
+                    let left = elementRect.right + 15 - offsetCorrection;
+                    let top = elementRect.top - 10;
+                    
+                    // Keep controls within viewport bounds
+                    const controlsWidth = 300;
+                    const controlsHeight = 400;
+                    
+                    if (left + controlsWidth > window.innerWidth) {
+                        left = elementRect.left - controlsWidth - 15 - offsetCorrection;
+                    }
+                    if (top + controlsHeight > window.innerHeight) {
+                        top = elementRect.bottom + 10;
+                    }
+                    if (top < 20) {
+                        top = 20;
+                    }
+                    
+                    // Ensure minimum distance from edges and control panel
+                    left = Math.max(400, Math.min(left, window.innerWidth - controlsWidth - 20)); // 400 to clear the control panel
+                    top = Math.max(20, Math.min(top, window.innerHeight - controlsHeight - 20));
+                    
+                    controls.style.left = left + 'px';
+                    controls.style.top = top + 'px';
+                    controls.style.display = 'block';
+                    
+                    console.log('STORE CONTROLS CORRECTED - Element x:', elementRect.x, 'Corrected left:', left, 'Final position:', left, top);
+                } else {
+                    // Fallback positioning
+                    controls.style.left = '500px';
+                    controls.style.top = '200px';
+                    controls.style.display = 'block';
+                    console.log('STORE CONTROLS FALLBACK positioning used');
+                }
             }
-            
+
             closeStoreControls() {
                 document.getElementById('storeControls').style.display = 'none';
                 this.selectedStoreId = null;
@@ -1800,6 +1853,7 @@
                 this.updateVisualization();
                 this.showMessage('Store deleted successfully', 'success');
             }
+
             showAssetControls(assetId, event) {
                 this.selectedAssetId = assetId;
                 const asset = this.assets.get(assetId);
@@ -1820,22 +1874,55 @@
                     checkboxDiv.className = 'checkbox-item';
                     checkboxDiv.innerHTML = `
                         <input type="checkbox" id="checkbox_${group.id}" ${isChecked ? 'checked' : ''} 
-                               onchange="visualizer.toggleAssetAccess('${assetId}', '${group.id}', this.checked)">
+                            onchange="visualizer.toggleAssetAccess('${assetId}', '${group.id}', this.checked)">
                         <label for="checkbox_${group.id}" style="color: ${group.color};">${group.name}</label>
                     `;
                     accessGroupsDiv.appendChild(checkboxDiv);
                 });
                 
-                // Position controls
-                const rect = event.target.getBoundingClientRect();
-                const left = Math.min(event.pageX + 10, window.innerWidth - 300);
-                const top = Math.min(event.pageY + 10, window.innerHeight - 400);
-                
-                controls.style.left = Math.max(20, left) + 'px';
-                controls.style.top = Math.max(20, top) + 'px';
-                controls.style.display = 'block';
+                // CORRECTED POSITIONING: Apply the same fix as tooltip and store controls
+                const assetElement = event.target.closest('g.asset') || event.target;
+                if (assetElement && assetElement.getBoundingClientRect) {
+                    const elementRect = assetElement.getBoundingClientRect();
+                    
+                    // Apply the same offset correction
+                    const offsetCorrection = 347; // Same correction used for tooltip and store controls
+                    
+                    let left = elementRect.right + 15 - offsetCorrection;
+                    let top = elementRect.top - 10;
+                    
+                    // Keep controls within viewport bounds
+                    const controlsWidth = 300;
+                    const controlsHeight = 400;
+                    
+                    if (left + controlsWidth > window.innerWidth) {
+                        left = elementRect.left - controlsWidth - 15 - offsetCorrection;
+                    }
+                    if (top + controlsHeight > window.innerHeight) {
+                        top = elementRect.bottom + 10;
+                    }
+                    if (top < 20) {
+                        top = 20;
+                    }
+                    
+                    // Ensure minimum distance from edges and control panel
+                    left = Math.max(400, Math.min(left, window.innerWidth - controlsWidth - 20)); // 400 to clear the control panel
+                    top = Math.max(20, Math.min(top, window.innerHeight - controlsHeight - 20));
+                    
+                    controls.style.left = left + 'px';
+                    controls.style.top = top + 'px';
+                    controls.style.display = 'block';
+                    
+                    console.log('ASSET CONTROLS CORRECTED - Element x:', elementRect.x, 'Corrected left:', left, 'Final position:', left, top);
+                } else {
+                    // Fallback positioning
+                    controls.style.left = '500px';
+                    controls.style.top = '200px';
+                    controls.style.display = 'block';
+                    console.log('ASSET CONTROLS FALLBACK positioning used');
+                }
             }
-            
+
             closeAssetControls() {
                 document.getElementById('assetControls').style.display = 'none';
                 this.selectedAssetId = null;
