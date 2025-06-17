@@ -1531,7 +1531,7 @@
                     assets[0].y = store.y;
                 } else {
                     const assetsPerRow = Math.ceil(Math.sqrt(assets.length));
-                    const spacing = 120;
+                    const spacing = 160;
                     const startX = store.x - ((assetsPerRow - 1) * spacing) / 2;
                     const startY = store.y - (Math.ceil(assets.length / assetsPerRow - 1) * spacing) / 2;
                     
@@ -1556,7 +1556,7 @@
                 const assetsPerRow = Math.ceil(Math.sqrt(assetCount));
                 const rows = Math.ceil(assetCount / assetsPerRow);
                 const spacing = 120;
-                const padding = 60;
+                const padding = 100;
                 
                 const width = Math.max(baseWidth, assetsPerRow * spacing + padding);
                 const height = Math.max(baseHeight, rows * spacing + padding);
